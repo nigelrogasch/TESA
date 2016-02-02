@@ -1,4 +1,4 @@
-% tesa_pcasupress()    - Supresses data by top n-dimensions
+% tesa_pcasupress()    - Supresses data by top PCA n-dimensions
 %                          
 %                           Hernandez-Pavon et al (2012) Uncovering neural  
 %                           independent components from highly artifactual 
@@ -17,9 +17,10 @@
 %
 % See also:
 %   SAMPLE, EEGLAB 
-
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
-% nigel.rogasch@monash.edu
+%
+% Copyright (C) 2016  Nigel Rogasch & Julio C. Hernandez-Pavon
+% Monash University and Aalto University
+% nigel.rogasch@monash.edu; julio.hpavon@gmail.com
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -63,14 +64,11 @@ if sum(mean(EEG.data(:,tInd1,:),3)) == 0 || sum(mean(EEG.data(:,tInd2,:),3)) == 
     error('The window for supression contains 0s. Please ensure that this window does not overlap with the window of removed data.');
 end
 
-% ###### ORIGINGAL JULIO SCRIPT #######
-% Note that this only uses the first trial to create the Xsub matrix
-% Xsub=inMat(:,tind); % Submatrix according to the time interval where we want to carry out the suppression
+% Submatrix according to the time interval where we want to carry out the suppression
+subMat = mean(EEG.data,3); %Mean of the matrix to compute the Submatrix
+Xsub = subMat(:,tInd1:tInd2);%Submatrix
 
-% ###### Fixed script that uses all trials ######
-% Check with Julio!!!!
-subMat = EEG.data(:,tInd1:tInd2,:);
-Xsub = reshape(subMat,size(subMat,1),[],1);
+
 
 %Suppression by PC's
 
@@ -89,14 +87,14 @@ titleNames = {'Raw data';'Remove 1 PC';'Remove 2 PCs';'Remove 3 PCs';'Remove 4 P
 %Plot the results of removing different componets
 figure('Name','Impact of removing PCs on signal','NumberTitle','off','Color',[0.5 .7 .9]); 
 subplot(2,3,1);
-plot(EEG.times,mean(EEG.data,3));
-set(gca,'Xlim',[-100 500]);
+plot(EEG.times,mean(EEG.data,3));grid
+set(gca,'Xlim',[-100 500]);ylabel('Amplitude (µV)'); xlabel('Time (ms)');
 title(titleNames{1,1},'FontWeight','bold');
 
 for a = 1:5;
     subplot(2,3,a+1);
-    plot(EEG.times,mean(outData(a).data,3));
-    set(gca,'Xlim',[-100 500]);
+    plot(EEG.times,mean(outData(a).data,3));grid
+    set(gca,'Xlim',[-100 500]);ylabel('Amplitude (µV)'); xlabel('Time (ms)');
     title(titleNames{a+1,1},'FontWeight','bold');
 end
 
@@ -118,8 +116,6 @@ if numPC > 0 && numPC <= 5
 elseif numPC > 5
     error('Please enter a number between 0-5');
 end
-
-EEG.pcasupress = numPC;
 
 fprintf('Data supressed by removing top %d dimensions\n', numPC);
         

@@ -12,15 +12,16 @@
 % Inputs:
 %   EEG                 - EEGLAB EEG structure
 %   timeWin             - [Vector] Time window for data supression in ms.
-%                       [start, end]
+%                         [start, end]
 % Outputs:
 %   EEG                 - EEGLAB EEG structure
 %
 % See also:
 %   SAMPLE, EEGLAB 
-
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
-% nigel.rogasch@monash.edu
+%
+% Copyright (C) 2016  Nigel Rogasch & Julio C. Hernandez-Pavon
+% Monash University and Aalto University
+% nigel.rogasch@monash.edu; julio.hpavon@gmail.com
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -69,10 +70,10 @@ if nargin < 2
     
 end
 
-%rsupress data
+%supress data
 EEG = tesa_pcasupress( EEG, timeWin );
 
 % return the string command
-com = sprintf('%s = pop_tesa_pcasupress( %s, %s );', inputname(1), inputname(1), mat2str(timeWin));
+com = sprintf('%s = pop_tesa_pcasupress( %s, %s);', inputname(1), inputname(1), mat2str(timeWin));
 
 end

@@ -25,9 +25,10 @@
 %
 % See also:
 %   SAMPLE, EEGLAB 
-
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
-% nigel.rogasch@monash.edu
+%
+% Copyright (C) 2016  Nigel Rogasch & Julio C. Hernandez-Pavon
+% Monash University and Aalto University
+% nigel.rogasch@monash.edu; julio.hpavon@gmail.com
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
