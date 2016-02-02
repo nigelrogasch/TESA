@@ -60,8 +60,8 @@
 %   EEG             - EEGLAB EEG structure
 % 
 % Examples
-%   EEG = tesa_findpulse( EEG, 'Cz' ); %standard use
-%   EEG = tesa_findpulse( EEG, 'Fz', 'refract', 4, 'rate', 2e5, 'tmsLabel','single' ); %alternate use
+%   EEG = tesa_findpulse( EEG, 'Cz' ); %default use
+%   EEG = tesa_findpulse( EEG, 'Fz', 'refract', 4, 'rate', 2e5, 'tmsLabel', 'single' ); %user defined input
 %   EEG = tesa_findpulse( EEG, 'Cz', 'paired', 'yes', 'ISI', [100],'pairLabel', {'LICI'}); %paired pulse use
 %   EEG = tesa_findpulse( EEG, 'Cz', 'repetitive', 'yes', 'ITI', 26, 'pulseNum', 40 ); %rTMS use 
 %
@@ -121,10 +121,10 @@ end
 
 %check that paired and repetitive have been correctly called
 if ~(strcmp(options.paired,'no') || strcmp(options.paired,'yes'))
-    error('paired must be either ''yes'' or ''no''.');
+    error('paired input must be either ''yes'' or ''no''.');
 end
 if ~(strcmp(options.repetitive,'no') || strcmp(options.repetitive,'yes'))
-    error('repetitive must be either ''yes'' or ''no''.');
+    error('repetitive input must be either ''yes'' or ''no''.');
 end
 
 %finds channel for thresholding
@@ -188,7 +188,7 @@ if strcmp(options.paired,'yes')
     
     %Check that refractory period is less that the ISI
     if options.refract > options.ISI
-        error('The refractory period is shorter than the interstimulus interval. This will result in inaccurate detection of the test pulse. Script termninated.');
+        error('The refractory period is shorter than the interstimulus interval. This will result in inaccurate detection of the test pulse. The refractory period can be altered using the ''refract'' input.');
     end
     
     %Check that single and paired labels are unique
@@ -199,8 +199,8 @@ if strcmp(options.paired,'yes')
     end
     
     %Check that paired labels are unique
-    if ~size(unique(options.pairLabel),2) == size(options.pairLabel,2)
-        error('Paired labels are not unique. Please ensure each label is different.')
+    if size(unique(options.pairLabel),2) ~= size(options.pairLabel,2)
+        error('Paired labels are not unique. Please ensure each label is different following ''pairLabel''.')
     end
     
     %Trims any white space from the label names
@@ -244,7 +244,7 @@ if strcmp(options.repetitive,'yes')
     for a = 1:size(diffStim,2)
         if diffStim(1,a) > options.ITI-prec
             if stimAll(1,a+(options.pulseNum-1))-stimAll(1,a) > diffStim(1,a+1).*(options.pulseNum-1)+10
-                error('Number of pulses in detected train are different from that specified. Script terminated');
+                error('Number of pulses in detected train are different from that specified. Check the ITI input is correct. Note the ITI is in ms.');
             else
                 for b = 1:options.pulseNum
                     stimLabel{1,a+(b-1)} = ['TMS',num2str(b)];
