@@ -1,6 +1,6 @@
-% tesa_removedata() - removes data between defined timepoints and replaces
+% tesa_removedata() - removes data between defined time points and replaces
 %                   data with 0s or the average of a defined period (e.g. a baseline period). 
-%                   Stores removed timepoints in EEG.tmscut.
+%                   Removed time points are stored in EEG.tmscut.
 %
 % Usage:
 %   >>  EEG = tesa_removedata( EEG, cutTimesTMS ); %replace with 0s
@@ -59,7 +59,7 @@ end
 %Check that two time points have been specified for replaceTimes
 if ~isempty(replaceTimes)    
     if size(replaceTimes,2) ~= 2
-        error('Please provide two time values for the time period to average in ms: [start cut, end cut]');
+        error('Please provide two time values for the time period to average in ms: [start, end]');
     end
 end
 
@@ -119,7 +119,7 @@ if ~isfield(EEG, 'tmscut')
     EEG.tmscut(1).srate = EEG.srate;
     EEG.tmscut(1).interpolated = 'no';
 elseif isfield(EEG, 'tmscut')
-    num = size(EEG.tmscut,1)+1;
+    num = size(EEG.tmscut,2)+1;
     EEG.tmscut(num).cutTimesTMS = cutTimesTMS;
     EEG.tmscut(num).replaceTimes = replaceTimes;
     EEG.tmscut(num).replacement = replacement;
