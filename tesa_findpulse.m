@@ -7,7 +7,7 @@
 %
 % Usage:
 %   >>  EEG = tesa_findpulse( EEG, elec );
-%   >>  EEG = tesa_findpulse( EEG, elec, varargin );
+%   >>  EEG = tesa_findpulse( EEG, elec, 'key1', value1... );
 %
 % Inputs:
 %   EEG             - EEGLAB EEG structure
@@ -125,6 +125,15 @@ if ~(strcmp(options.paired,'no') || strcmp(options.paired,'yes'))
 end
 if ~(strcmp(options.repetitive,'no') || strcmp(options.repetitive,'yes'))
     error('repetitive input must be either ''yes'' or ''no''.');
+end
+
+%if events are present, check that the EEG.event.type is a string
+if ~isempty(EEG.event)
+    for a = 1:size(EEG.event,2)
+        if isnumeric(EEG.event(a).type)
+            EEG.event(a).type = num2str(EEG.event(a).type);
+        end
+    end
 end
 
 %finds channel for thresholding
