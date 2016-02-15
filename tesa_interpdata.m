@@ -1,7 +1,8 @@
 % tesa_interpdata()     - replaces removed data using interpolated data.
 %                           Note that either tesa_removedata or
-%                           pop_tesa_removedata must be ran first.
+%                           pop_tesa_removedata must be ran prior to this function.
 % Usage:
+%   >>  EEG = tesa_interpdata( EEG, interpolation );
 %   >>  EEG = tesa_interpdata( EEG, interpolation, interpWin );
 %
 % Inputs:
@@ -14,9 +15,13 @@
 %    
 % Outputs:
 %   EEG                 - EEGLAB EEG structure
+% 
+% Examples
+%   EEG = tesa_interpdata( EEG, 'linear' ); %replaces missing data with linear interpolation. Linear function is fitted on data point before and after missing data.
+%   EEG = tesa_interpdata( EEG, 'cubic', [50,50] ); %replaces mising data with cubic interpolation. Cubic is fitted on data 50 ms before and 50 ms after missing data
 %
 % See also:
-%   SAMPLE, EEGLAB 
+%   tesa_removedata
 
 % Copyright (C) 2015  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
@@ -72,67 +77,44 @@ if strcmp(interpolation,'linear') %linear interpolation
     for z = 1:size(EEG.tmscut,2)       
         if strcmp(EEG.tmscut(z).interpolated,'no')
             interpData = [];
+            
+            %Checks whether data sampling rate has changed
+            tp1 = []; tp2 = [];
+            if isequal(EEG.srate,EEG.tmscut(z).srate)
+                tp1 = EEG.tmscut(z).tmscut1;
+                tp2 = EEG.tmscut(z).tmscut2;
+            elseif ~isequal(EEG.srate,EEG.tmscut(z).srate)
+                [val1,tp1] = min(abs(EEG.times-EEG.tmscut(z).cutTimesTMS(1,1)));
+                [val2,tp2] = min(abs(EEG.times-EEG.tmscut(z).cutTimesTMS(1,2)));
+            end
 
             %fit linear function to data
             for a = 1:size(EEG.data,1)
                 for b = 1:size(EEG.data,3)
 
                     %Extract time points before and after removed data
-                    x(1,1) = EEG.times(1,EEG.tmscut(z).tmscut1-1);
-                    x(1,2) = EEG.times(1,EEG.tmscut(z).tmscut2+1);
+                    x(1,1) = EEG.times(1,tp1-1);
+                    x(1,2) = EEG.times(1,tp2+1);
 
                     %Extract data points before and after removed data
-                    y(1,1) = EEG.data(a,EEG.tmscut(z).tmscut1-1,b);
-                    y(1,2) = EEG.data(a,EEG.tmscut(z).tmscut2+1,b);
+                    y(1,1) = EEG.data(a,tp1-1,b);
+                    y(1,2) = EEG.data(a,tp2+1,b);
 
                     %Fit linear function to data points
                     p = polyfit(x,y,1);
 
                     %Interpolate missing data points
-                    X = EEG.times(1,EEG.tmscut(z).tmscut1:EEG.tmscut(z).tmscut2); %missing time points
+                    X = EEG.times(1,tp1:tp2); %missing time points
                     interpData(a,:,b) = polyval(p,X);
 
                 end
             end
 
             %Insert interpolated data 
-            EEG.data(:,EEG.tmscut(z).tmscut1:EEG.tmscut(z).tmscut2,:) = interpData;
+            EEG.data(:,tp1:tp2,:) = interpData;
 
             %display message
             fprintf('Linear interpolation between %d ms and %d ms \n',EEG.tmscut(z).cutTimesTMS(1,1),EEG.tmscut(z).cutTimesTMS(1,2));
-
-            if ~isempty(EEG.tmscut(z).cutTimesRec)
-
-                interpData = [];
-
-                %fit linear function to data
-                for a = 1:size(EEG.data,1)
-                    for b = 1:size(EEG.data,3)
-
-                        %Extract time points before and after removed data
-                        x(1,1) = EEG.times(1,EEG.tmscut(z).reccut1-1);
-                        x(1,2) = EEG.times(1,EEG.tmscut(z).reccut2+1);
-
-                        %Extract data points before and after removed data
-                        y(1,1) = EEG.data(a,EEG.tmscut(z).reccut1-1,b);
-                        y(1,2) = EEG.data(a,EEG.tmscut(z).reccut2+1,b);
-
-                        %Fit linear function to data points
-                        p = polyfit(x,y,1);
-
-                        %Interpolate missing data points
-                        X = EEG.times(1,EEG.tmscut(z).reccut1:EEG.tmscut(z).reccut2); %missing time points
-                        interpData(a,:,b) = polyval(p,X);
-
-                    end
-                end
-
-                %Insert interpolated data 
-                EEG.data(:,EEG.tmscut(z).reccut1:EEG.tmscut(z).reccut2,:) = interpData;
-
-                %display message
-                fprintf('Linear interpolation between %d ms and %d ms \n',EEG.tmscut(z).cutTimesRec(1,1),EEG.tmscut(z).cutTimesRec(1,2));
-            end
 
             %Indicate that interpolation has happened
             EEG.tmscut(z).interpolated = 'yes';
@@ -146,74 +128,52 @@ if strcmp(interpolation,'cubic') %cubic interpolation
         if strcmp(EEG.tmscut(z).interpolated,'no')
             interpData = [];
 
+            %Checks whether data sampling rate has changed
+            tp1 = []; tp2 = [];
+            if isequal(EEG.srate,EEG.tmscut(z).srate)
+                tp1 = EEG.tmscut(z).tmscut1;
+                tp2 = EEG.tmscut(z).tmscut2;
+            elseif ~isequal(EEG.srate,EEG.tmscut(z).srate)
+                [val1,tp1] = min(abs(EEG.times-EEG.tmscut(z).cutTimesTMS(1,1)));
+                [val2,tp2] = min(abs(EEG.times-EEG.tmscut(z).cutTimesTMS(1,2)));
+            end
+            
             %fit cubic function to data
+            
+            %Convert interpWin to samples
+            iW1 = (interpWin(1,1)/1000)*EEG.srate;
+            iW2 = (interpWin(1,2)/1000)*EEG.srate;
+
+            %Extract time points before and after removed data
+            in1 = round(tp1-iW1); in2 = round(tp2+iW2);
+            x = EEG.times(1,in1:in2);
+            [val1,TP1] = min(abs(x-EEG.tmscut(z).cutTimesTMS(1,1)));
+            [val2,TP2] = min(abs(x-EEG.tmscut(z).cutTimesTMS(1,2)));
+            x(:,TP1:TP2) = [];
+                    
             for a = 1:size(EEG.data,1)
                 for b = 1:size(EEG.data,3)
 
-                    %Extract time points before and after removed data
-                    x = EEG.times(1,EEG.tmscut(z).tmscut1-interpWin(1,1):EEG.tmscut(z).tmscut2+interpWin(1,2));
-                    dif1 = abs(x-EEG.tmscut(z).cutTimesTMS(1,1));
-                    dif2 = abs(x-EEG.tmscut(z).cutTimesTMS(1,2));
-                    tp1 = find(dif1 == min(dif1));
-                    tp2 = find(dif2 == min(dif2));
-                    x(:,tp1:tp2) = [];
-
                     %Extract data points before and after removed data
-                    y = EEG.data(a,EEG.tmscut(z).tmscut1-interpWin(1,1):EEG.tmscut(z).tmscut2+interpWin(1,2),b);
-                    y(:,tp1:tp2) = [];
+                    y = EEG.data(a,in1:in2,b);
+                    y(:,TP1:TP2) = [];
 
                     %Fit cubic function to data points
                     p = polyfit(x,y,3);
 
                     %Interpolate missing data points
-                    X = EEG.times(1,EEG.tmscut(z).tmscut1:EEG.tmscut(z).tmscut2); %missing time points
+                    X = EEG.times(1,tp1:tp2); %missing time points
                     interpData(a,:,b) = polyval(p,X);
 
                 end
             end
 
             %Insert interpolated data 
-            EEG.data(:,EEG.tmscut(z).tmscut1:EEG.tmscut(z).tmscut2,:) = interpData;
+            EEG.data(:,tp1:tp2,:) = interpData;
 
             %display message
             fprintf('Cubic interpolation between %d ms and %d ms \n',EEG.tmscut(z).cutTimesTMS(1,1),EEG.tmscut(z).cutTimesTMS(1,2));
-            
-            if ~isempty(EEG.tmscut(z).cutTimesRec)
-                interpData = [];
-                
-                %fit cubic function to data
-                for a = 1:size(EEG.data,1)
-                    for b = 1:size(EEG.data,3)
-
-                        %Extract time points before and after removed data
-                        x = EEG.times(1,EEG.tmscut(z).reccut1-interpWin(1,1):EEG.tmscut(z).reccut2+interpWin(1,2));
-                        dif1 = abs(x-EEG.tmscut(z).cutTimesRec(1,1));
-                        dif2 = abs(x-EEG.tmscut(z).cutTimesRec(1,2));
-                        tp1 = find(dif1 == min(dif1));
-                        tp2 = find(dif2 == min(dif2));
-                        x(:,tp1:tp2) = [];
-
-                        %Extract data points before and after removed data
-                        y = EEG.data(a,EEG.tmscut(z).reccut1-interpWin(1,1):EEG.tmscut(z).reccut2+interpWin(1,2),b);
-                        y(:,tp1:tp2) = [];
-
-                        %Fit cubic function to data points
-                        p = polyfit(x,y,3);
-
-                        %Interpolate missing data points
-                        X = EEG.times(1,EEG.tmscut(z).reccut1:EEG.tmscut(z).reccut2); %missing time points
-                        interpData(a,:,b) = polyval(p,X);
-
-                    end
-                end
-
-                %Insert interpolated data 
-                EEG.data(:,EEG.tmscut(z).reccut1:EEG.tmscut(z).reccut2,:) = interpData;
-
-                %display message
-                fprintf('Cubic interpolation between %d ms and %d ms \n',EEG.tmscut(z).cutTimesRec(1,1),EEG.tmscut(z).cutTimesRec(1,2));
-                
-            end                      
+                 
         end
         
         %Indicate that interpolation has happened
