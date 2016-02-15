@@ -22,10 +22,14 @@
 % 
 %   'rate',int      - int defines the rate of change of the TMS artifact in
 %                   uV/ms. 
-%                   default = 1e5
+%                   default = 1e4
 % 
 %   'tmsLabel','str'- 'str' is a string for the single TMS label.  
 %                   default = 'TMS'
+%
+%   'plots','str' - 'on'|'off'. Brings up a plot showing the detected
+%                   peaks. Red = detected 
+%                   default = 'on'
 %  
 % Input pairs for detecting paired pulses
 %   'paired','str'  - required. 'str' - type 'yes' to turn on paired detection
@@ -61,12 +65,12 @@
 % 
 % Examples
 %   EEG = tesa_findpulse( EEG, 'Cz' ); %default use
-%   EEG = tesa_findpulse( EEG, 'Fz', 'refract', 4, 'rate', 2e5, 'tmsLabel', 'single' ); %user defined input
+%   EEG = tesa_findpulse( EEG, 'Fz', 'refract', 4, 'rate', 2e5, 'tmsLabel', 'single','plots','off' ); %user defined input
 %   EEG = tesa_findpulse( EEG, 'Cz', 'paired', 'yes', 'ISI', [100],'pairLabel', {'LICI'}); %paired pulse use
 %   EEG = tesa_findpulse( EEG, 'Cz', 'repetitive', 'yes', 'ITI', 26, 'pulseNum', 40 ); %rTMS use 
 %
 % See also:
-%   tesa_findpulse_peak, tesa_fixtrigger
+%   tesa_findpulsepeak, tesa_fixtrigger
 
 % Copyright (C) 2015  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
@@ -92,7 +96,7 @@ if nargin < 2
 end
 
 %define defaults
-options = struct('refract',3,'rate',1e5,'tmsLabel','TMS','paired','no','ISI',[],'pairLabel',{'TMSpair'},'repetitive','no','ITI',[],'pulseNum',[]);
+options = struct('refract',3,'rate',1e4,'tmsLabel','TMS','plots','on','paired','no','ISI',[],'pairLabel',{'TMSpair'},'repetitive','no','ITI',[],'pulseNum',[]);
 options.pairLabel = cellstr(options.pairLabel);
 
 % read the acceptable names
@@ -159,17 +163,28 @@ rateS = options.rate.*h; %Convert rate in to change in uV per sample
 logstim = abs(der1)>rateS;
 samp =(1:size(data,2));
 stim = samp(logstim);
+stim = stim-1; %Makes start of artefact the defining point
 
 %Remove triggers within refractory period
 sRef = ceil(EEG.srate./1000.*options.refract); %converts refractory period to samples
 refPer = stim(1,1)+sRef; %defines refractory period following stimulus
 stimAll(1,1) = stim(1,1);
+stimAmp(1,1) = data(1,stim(1,1));
 for a = 2:size(stim,2)
     if stim(1,a) > refPer
         stimAll(1,size(stimAll,2)+1) = stim(1,a);
+        stimAmp(1,size(stimAmp,2)+1) = data(1,stim(1,a));
         refPer = stim(1,a)+sRef;
     end 
 end
+
+%Sanity plot
+if strcmp(options.plots,'on'); 
+    figure; 
+    plot(1:1:EEG.pnts,data(1,1:end),'b');
+    hold on;
+    plot(stimAll(1,1:end), stimAmp(1,1:end),'r.');
+end; 
 
 %Trims any white space from the single label
 options.tmsLabel = strtrim(options.tmsLabel);
