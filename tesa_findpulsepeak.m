@@ -9,16 +9,22 @@
 %                   Paired pulses and repetitive TMS trains can
 %                   also be deteceted.
 %                   This script is an alternative to tesa_findpulse
+% 
+%                   Note that this script requires a toolbox developed by
+%                   Daniel Wagenaar (WagenaarMBL) which is available for
+%                   download at: http://www.its.caltech.edu/~daw/teach.html
+%                   Once the toolbox is unzipped, please make sure this is
+%                   added to your matlab path.
 %
 % Usage:
-%   >>  EEG = tesa_findpulsepeak( EEG, elec, varargin );
+%   >>  EEG = tesa_findpulsepeak( EEG, elec, 'key1', value1... );
 %
 % Inputs:
 %   EEG             - EEGLAB EEG structure
 %   elec            - string with electrode to use for finding artifact
 % 
 % Optional input pairs:
-%   'dtrend','str'  'poly'|'linear'|'off'. Defines the type of detrend used
+%   'dtrnd','str'  'poly'|'linear'|'off'. Defines the type of detrend used
 %                   to centre the data.
 %                   default = poly
 %   'thrshtype','str'/int - 'dynamic'|'median'|value. Defines the type of
@@ -71,8 +77,14 @@
 % Outputs:
 %   EEG             - EEGLAB EEG structure
 %
+% Examples
+%   EEG = tesa_findpulsepeak( EEG, 'Cz' ); %default use
+%   EEG = tesa_findpulsepeak( EEG, 'Fz', 'dtrnd', 'linear', 'thrshtype', 'median', 'wpeaks', 'gui', 'plots', 'off', 'tmsLabel', 'single' ); %user defined
+%   EEG = tesa_findpulsepeak( EEG, 'Cz', 'paired', 'yes', 'ISI', [100],'pairLabel', {'LICI'}); %paired pulse use
+%   EEG = tesa_findpulsepeak( EEG, 'Cz', 'repetitive', 'yes', 'ITI', 26, 'pulseNum', 40 ); %rTMS use 
+%
 % See also:
-%   SAMPLE, EEGLAB 
+%   tesa_finpulse, tesa_fixtrigger 
 
 % Copyright (C) 2015  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
@@ -81,7 +93,7 @@
 % Caley Sullivan, Monash University, calley.sullivan@monash.edu
 % 
 % Based on functions developed by Daniel Wagenaar 
-%                                  http://www.its.caltech.edu/~daw/software.html
+%                                  http://www.its.caltech.edu/~daw/teach.html
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -139,6 +151,11 @@ if ~(strcmp(options.repetitive,'no') || strcmp(options.repetitive,'yes'))
     error('repetitive must be either ''yes'' or ''no''.');
 end
 
+%checks that the WagenaarMBL toolbox is added to the matlab path
+if exist('detectspike','file') ~= 2
+    error('Please add the Wagenaar MBL toolbox to your matlab path. See help or the TESA manual for details.');
+end
+
 %finds channel for thresholding
 for z = 1:EEG.nbchan;
     chan{1,z} = EEG.chanlocs(1,z).labels;
@@ -194,7 +211,7 @@ end ;
  
 dat = (double(sig));
 tms = (1:numel(sig))';
-spk = detectspike((dat),tms,thrsh,1*Fs,10*Fs);
+spk = detectspike((dat),tms,thrsh,1*EEG.srate,10*EEG.srate);
 artlat= squeeze(spk.tms);
 
 %Sanity plot
