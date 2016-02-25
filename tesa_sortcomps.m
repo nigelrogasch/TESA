@@ -16,7 +16,7 @@
 %   EEG                 - EEGLAB EEG structure
 %
 % See also:
-%   SAMPLE, EEGLAB 
+%   tesa_autocompselect 
 
 % Copyright (C) 2015  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
@@ -48,6 +48,9 @@ vars_norm = vars/sum(vars)*100; %calculates the % variance of each component rel
 
 EEG.icawinv = EEG.icawinv(:,ixsSort); %alters inverse weights matrix based on component variance order
 EEG.icaweights = EEG.icaweights(ixsSort,:); %alters weights matrix based on component variance order
+if ~isempty(EEG.icaact)
+    EEG.icaact = EEG.icaact(ixsSort,:,:); %alters time course matrix based on component variance order
+end
 
 fprintf('ICA weights sorted by time course variance\n');
         
