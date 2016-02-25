@@ -1,57 +1,69 @@
-% tesa_tepextract() - averages over trials and electrodes in a region of
-%                   interest to extract TMS-evoked potentials. Outputs are
-%                   saved in the EEG structure (EEG.ROI). For TEPs
-%                   following paired pulses, an additional file can be
+% tesa_tepextract() - averages over trials to generate a TMS-evoked potential (TEP). 
+%                   Either a region-of-interest analysis, which averages
+%                   over selected electrodes, or a global field amplitude
+%                   analysis (standard deviation across electrodes at each
+%                   time point) can be performed. Outputs are
+%                   saved in the EEG structure EEG.ROI or EEG.GMFA respectively. 
+%                   For TEPs following paired pulses, an additional file can be
 %                   specified to subtract from the conditioning pulse and
 %                   thereby minimising the impact of on-going activity in  the test
 %                   pulse time period.
+% 
+%                   Finding peaks and returning amplitudes and latencies is
+%                   performed with tesa_peakanalysis and tesa_peakoutput.
+%
+%                   Further reading on importance of correcting paired pulses with TMS-EEG:
+%                   'Rogasch N.C. et al (2015) Cortical inhibition of distinct mechanisms in 
+%                   the dorsolateral prefrontal cortex is related to working memory performance:    
+%                   A TMS–EEG study. Cortex, 64:68-77.'
+%                   In particular, see supplementary materials
 %
 % Usage:
-%   >>  EEG = tesa_dataanalysis( EEG, type );
-%   >>  EEG = tesa_dataanalysis( EEG, type, varargin );
+%   >>  EEG = tesa_tepextract( EEG, type );
+%   >>  EEG = tesa_tepextract( EEG, type, 'key1',value1... );
 %
 % Inputs:
 %   EEG             - EEGLAB EEG structure
 %   type            - string for analysis type. Either 'ROI' or 'GMFA'
-%   'roi','{}'      - [required for type 'ROI'] input put includingstring or 
+%   'elecs','{}'    - [required for type 'ROI'] string or 
 %                   cell array defining electrodes to be
 %                   averaged for ROI analysis. Type 'all' to average over
 %                   all electrodes.
-%                   Examples: 'roi','C3' (single); 'roi',{'C3','C4','CP1'} (multiple); 
-%                       'roi','all' (all electrodes).
+%                   Examples: 'elecs','C3' (single); 'elecs',{'C3','C4','CP1'} (multiple); 
+%                   'elecs','all' (all electrodes).
 % 
 % Optional input pairs (varargin):
-%   'roiName','str' - 'str' is a name to identify ROI analysis. This is
-%                   useful if multiple different ROIs are to be analysed.
-%                   The output will be stored under this name in EEG.ROI.
-%                   Example: 'motor'
+%   'tepName','str' - 'str' is a name to identify analysis. This is
+%                   useful if multiple different analyses (i.e. ROIs) are to be analysed.
+%                   The output will be stored under this name in EEG.ROI or EEG.GMFA
+%                   Example: 'motor' or 'parietal'
 %                   Defaults are: R1,R2,R....
 % 
 % Optional input pairs for correcting paired pulses (varargin):
 %   'pairCorrect','on' - turns on pair correction.
-%   'ISI',int       - int is a number which defines the inter-stimulus
-%                   interval between the conditioning and test pulse. The
-%                   single TEP that is subtracted from the paired TEP will
+%   'ISI',int       - [required if pairCorrect on] int is an integer which defines 
+%                   the inter-stimulus interval between the conditioning and test pulse. 
+%                   The single TEP that is subtracted from the paired TEP will
 %                   be shifted by this many ms to align with the
 %                   conditioning pulse. int is in ms.
 %                   Example: 100
-%   'fileName','str' - 'str' is the path and name of the .set file to be
-%                   subtracted from the paired TEP. This should be a single
+%   'fileName','str' - [required if pairCorrect on]'str' is the path and name of the .set file 
+%                   to be subtracted from the paired TEP. This should be a single
 %                   TEP evoked by a stimulus intensity equivalent to the
 %                   conditioning pulse.
 %                   Example: 'C:\tmseeg\myfile.set'
-% 
-%   Further reading on importance of correcting paired pulses with TMS-EEG:
-%   Rogasch N.C. et al (2015) Cortical inhibition of distinct mechanisms in 
-%   the dorsolateral prefrontal cortex is related to working memory performance:    
-%   A TMS–EEG study. Cortex, 64:68-77.
-%   In particular, see supplementary materials
 %
 % Outputs:
 %   EEG             - EEGLAB EEG structure
-%
+% 
+% Examples
+%   EEG = tesa_tepextract( EEG, 'ROI', 'elecs', {'FC1','FC3','C1','C3'} ); % standard ROI analysis
+%   EEG = tesa_tepextract( EEG, 'ROI', 'elecs', {'C1','C3'}, 'tepName','motor' ); % ROI analysis with specific name
+%   EEG = tesa_tepextract( EEG, 'ROI', 'elecs', 'C3', 'pairCorrect', 'on', 'ISI', 100, 'fileName', 'C:\tmseeg\LICI.set' ); % paired pulse analysis
+%   EEG = tesa_tepextract( EEG, 'GMFA'); % standard GMFA analysis
+% 
 % See also:
-%   SAMPLE, EEGLAB 
+%   tesa_peakanalysis, tesa_peakoutput 
 
 % Copyright (C) 2015  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
@@ -77,7 +89,7 @@ if nargin < 2
 end
 
 %define defaults
-options = struct('roi',[],'roiName',[],'pairCorrect','off','ISI',[],'fileName',[]);
+options = struct('elecs',[],'tepName',[],'pairCorrect','off','ISI',[],'fileName',[]);
 
 % read the acceptable names
 optionNames = fieldnames(options);
@@ -100,40 +112,56 @@ end
 
 %If ROI selected check that roi exists
 if strcmp(type,'ROI')
-    if isempty(options.roi)
-        error('No electrodes given for region of interest analysis. Please provide electrodes e.g. ''roi'',{''C3'',''FC1''}.');
+    if isempty(options.elecs)
+        error('No electrodes given for region of interest analysis. Please provide electrodes e.g. ''elecs'',{''C3'',''FC1''}.');
     end
 end
 
 %Convert roi to cell
-if strcmp('char',class(options.roi))
-    options.roi = {options.roi};
+if strcmp('char',class(options.elecs))
+    options.elecs = {options.elecs};
 end
 
-%Check for other ROI analysis
-if isempty(options.roiName)  
-    if ~isfield(EEG,'ROI')
-        options.roiName = 'R1';
-    else
-        options.roiName = ['R',num2str(size(EEG.ROI,2)+1)];
-    end
-end
 
 if strcmp(type,'ROI')
+    
+    %Check for other ROI analysis
+    if isempty(options.tepName)  
+        if ~isfield(EEG,'ROI')
+            options.tepName = 'R1';
+        else
+            options.tepName = ['R',num2str(size(EEG.ROI,2)+1)];
+        end
+    end
+
+    %Check if ROI name already exists
+    if isfield(EEG,'ROI')
+        if isfield(EEG.ROI,options.tepName)
+            error('tepName ''%s'' already exists. Please choose another name',options.tepName)
+        end
+    end
 
     %Extract electrodes to be averaged
     e = struct2cell(EEG.chanlocs);
     elec = squeeze(e(1,1,:));
 
-    if strcmp(options.roi{1,1}, 'all')
+    if strcmp(options.elecs{1,1}, 'all')
         timeSeries = EEG.data;
     else
-        for a = 1:size(options.roi,2)
-            if isempty(find(strcmp(options.roi{1,a},elec)))
-                error('%s is not present in the current file. Please choose again.',options.roi{1,a});
+        eNum = [];
+        missing = [];
+        for a = 1:size(options.elecs,2)
+            if isempty(find(strcmp(options.elecs{1,a},elec)))
+                warning('%s is not present in the current file. Electrode not included in average.',options.elecs{1,a});
+                missing{1,size(missing,2)+1} = options.elecs{1,a};
             else
-                eNum (1,a) = find(strcmp(options.roi{1,a},elec));
+                eNum (1,size(eNum,2)+1) = find(strcmp(options.elecs{1,a},elec));
             end
+
+        end
+        
+        if isempty(eNum)
+            error('None of the electrodes selected for the ROI are present in the data.');
         end
 
         timeSeries = EEG.data(eNum,:,:);
@@ -142,15 +170,21 @@ if strcmp(type,'ROI')
     %Averages over timeseries
     timeSeriesIn = nanmean(timeSeries,1);
     
-    EEG.ROI.(options.roiName).tseries = nanmean(timeSeriesIn,3);
-    EEG.ROI.(options.roiName).chans = options.roi;
-    EEG.ROI.(options.roiName).time = EEG.times;
-    if strcmp(options.roi,'all')
-        EEG.ROI.(options.roiName).chans = elec';
+    EEG.ROI.(options.tepName).tseries = nanmean(timeSeriesIn,3);
+    EEG.ROI.(options.tepName).chans = options.elecs;
+    if ~strcmp(options.elecs{1,1}, 'all')
+        EEG.ROI.(options.tepName).missing = missing;
     end
-    EEG.ROI.(options.roiName).CI = 1.96*(std(timeSeriesIn,0,3)./(sqrt(size(timeSeriesIn,3))));
+    EEG.ROI.(options.tepName).time = EEG.times;
+    if strcmp(options.elecs,'all')
+        EEG.ROI.(options.tepName).chans = elec';
+    end
+    EEG.ROI.(options.tepName).CI = 1.96*(std(timeSeriesIn,0,3)./(sqrt(size(timeSeriesIn,3))));
+    
     %display message
-    fprintf('Region of interest extracted and saved in EEG.ROI.%s\n',options.roiName);
+    if strcmp(options.pairCorrect, 'off')
+        fprintf('Region of interest extracted and saved in EEG.ROI.%s\n',options.tepName);
+    end
 
     %Perform correction for paired pulse analysis
     if strcmp(options.pairCorrect, 'on')
@@ -170,14 +204,14 @@ if strcmp(type,'ROI')
         e1 = struct2cell(EEG1.chanlocs);
         elec1 = squeeze(e1(1,1,:));
 
-        if strcmp(options.roi{1,1},'all')
-            if sum(strcmp(elec,elec1)) ~= size(elec,1)
+        if strcmp(options.elecs{1,1},'all')
+            if size(elec1,1) ~= size(elec,1)
                 error('The channels in the existing file and the file to be subtracted are not the same. Please ensure these match. Script terminated.');
             end
         else
-            for a = 1:size(options.roi,2)
-                if sum(strcmp(options.roi{1,a},elec1)) == 0
-                    error('Electrode %s does not exist in file to be subtracted. Script terminated.',options.roi{1,a});
+            for a = 1:size(options.elecs,2)
+                if sum(strcmp(options.elecs{1,a},elec1)) == 0
+                    warning('%s is not present in the single file. Electrode not included in average.',options.elecs{1,a});
                 end
             end
         end
@@ -193,15 +227,15 @@ if strcmp(type,'ROI')
         avgTrials1=nanmean(EEG1.data,3); %Calculate average over trials
 
         %Extract electrodes to be averaged
-        if strcmp(options.roi{1,1}, 'all')
+        if strcmp(options.elecs{1,1}, 'all')
             timeSeries1 = avgTrials1;
         else
             e1 = struct2cell(EEG1.chanlocs);
             elec1 = squeeze(e1(1,1,:));
 
             eNum1 = [];
-            for a = 1:size(options.roi,2)
-                eNum1 (1,a) = find(strcmp(options.roi{1,a},elec1));
+            for a = 1:size(options.elecs,2)
+                eNum1 (1,a) = find(strcmp(options.elecs{1,a},elec1));
             end
 
             timeSeries1 = avgTrials1(eNum1,:);
@@ -215,30 +249,48 @@ if strcmp(type,'ROI')
         sub = [tseries1, temp];
 
         %Subtract corrected time series from existing time series
-        EEG.ROI.(options.roiName).tseries = EEG.ROI.(options.roiName).tseries - sub;
-        EEG.ROI.(options.roiName).corrected = 'yes';
-        EEG.ROI.(options.roiName).chans = options.roi;
-        EEG.ROI.(options.roiName).time = EEG.times;
-        if strcmp(options.roi,'all')
-            EEG.ROI.(options.roiName).chans = elec';
+        EEG.ROI.(options.tepName).tseries = EEG.ROI.(options.tepName).tseries - sub;
+        EEG.ROI.(options.tepName).corrected = 'yes';
+        EEG.ROI.(options.tepName).chans = options.elecs;
+        EEG.ROI.(options.tepName).time = EEG.times;
+        if strcmp(options.elecs,'all')
+            EEG.ROI.(options.tepName).chans = elec';
         end
-        EEG.ROI.(options.roiName).CI = EEG.ROI.(options.roiName).CI - sub;
+        EEG.ROI.(options.tepName).CI = EEG.ROI.(options.tepName).CI - sub;
         
         %display message
-        fprintf('Region of interest extracted and saved in EEG.ROI.%s\n',options.roiName);
+        fprintf('Region of interest extracted and saved in EEG.ROI.%s\n',options.tepName);
         fprintf('Paired pulse correction applied for ISI of %d ms\n',options.ISI);
 
     end
 end
 
 if strcmp(type,'GMFA')
+    
+    %Check for other GMFA analysis
+    if isempty(options.tepName)  
+        if ~isfield(EEG,'GMFA')
+            options.tepName = 'R1';
+        else
+            options.tepName = ['R',num2str(size(EEG.GMFA,2)+1)];
+        end
+    end
+
+    %Check if GMFA name already exists
+    if isfield(EEG,'GMFA')
+        if isfield(EEG.GMFA,options.tepName)
+            error('tepName ''%s'' already exists. Please choose another name',options.tepName)
+        end
+    end
    
     %Calculates GMFA (standard deviation across electrodes at each time point)
-    EEG.GMFA.R1.tseries = std(mean(EEG.data,3));
-    EEG.GMFA.R1.time = EEG.times;
+    EEG.GMFA.(options.tepName).tseries = std(mean(EEG.data,3));
+    EEG.GMFA.(options.tepName).time = EEG.times;
 
     %display message
-    fprintf('GMFA extracted and saved in EEG.GMFA\n');
+    if strcmp(options.pairCorrect,'off')
+        fprintf('GMFA extracted and saved in EEG.GMFA.%s\n',options.tepName);
+    end
 
     %Perform correction for paired pulse analysis
     if strcmp(options.pairCorrect, 'on')
@@ -261,7 +313,7 @@ if strcmp(type,'GMFA')
         e1 = struct2cell(EEG1.chanlocs);
         elec1 = squeeze(e1(1,1,:));
 
-        if sum(strcmp(elec,elec1)) ~= size(elec,1)
+        if size(elec1,1) ~= size(elec,1)
             error('The channels in the existing file and the file to be subtracted are not the same. Please ensure these match. Script terminated.');
         end
 
@@ -273,22 +325,23 @@ if strcmp(type,'GMFA')
         %Perform GMFA analysis on file
 
         %Calculate average over trials
-        avgTrials1=nanmean(EEG1.data,3); %Calculate average over trials
+        avgTrials=nanmean(EEG1.data,3); %Calculate average over trials
 
         %Shift new time series to align with pulse to be subtracted
         ISIS = (EEG1.srate/1000)*options.ISI; %convert ISI to samples
+        avgTrials1 = avgTrials;
         avgTrials1(:,1:ISIS) = [];
         temp = zeros(size(avgTrials1,1),ISIS);
         sub = [avgTrials1, temp];
         corrected = avgTrials - sub;
 
         %Subtract corrected time series from existing time series
-        EEG.GMFA.R1.tseries = std(corrected);
-        EEG.GMFA.R1.corrected = 'yes';
-        EEG.GMFA.R1.time = EEG.times;
+        EEG.GMFA.(options.tepName).tseries = std(corrected);
+        EEG.GMFA.(options.tepName).corrected = 'yes';
+        EEG.GMFA.(options.tepName).time = EEG.times;
 
         %display message
-        fprintf('GMFA extracted and saved in EEG.GMFA\n');
+        fprintf('GMFA extracted and saved in EEG.GMFA.%s\n',options.tepName);
         fprintf('Paired pulse correction applied for ISI of %d ms\n',options.ISI);
 
     end
