@@ -162,7 +162,7 @@ EEG = pop_tesa_sortcomps(EEG);
 % ##### REMOVE BAD COMPONENTS #####
 
 %Select bad components
-pop_selectcomps(EEG, [1:size(icawinv,2)] );
+pop_selectcomps(EEG, [1:size(EEG.icawinv,2)] );
 pause_script = input('Highlight bad trials, update marks and then press enter');
 
 %Removes bad components
