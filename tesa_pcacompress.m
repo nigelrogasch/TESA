@@ -13,19 +13,29 @@
 % 
 % Usage:
 %   >>  EEG = tesa_pcacompress( EEG );
-%   >>  EEG = tesa_pcacompress( EEG , compVal);
+%   >>  EEG = tesa_pcacompress( EEG , 'key1', value1...);
 %
 % Inputs:
 %   EEG                 - EEGLAB EEG structure
-%   compVal             - [Integer] Number of dimensions to compress data
-%                           Default = 25.
+% 
+% Optional input pairs:
+%   'compVal',int       - int = number of dimensions to compress data
+%                       Default = 25.
+%   'plot','str'        - 'on' | 'off'. Turns on/off plot summarising the
+%                       variance explained by principal components.
+%                       Default = 'on'
 % 
 % Outputs:
 %   EEG                 - EEGLAB EEG structure
 %
+% Examples:
+%   EEG = tesa_pcacompress( EEG );
+%   EEG = tesa_pcacompress( EEG, 'compVal', 30 ); %compress to top 30 dimensions
+%   EEG = tesa_pcacompress( EEG, 'plot','off' ); %turns off summary plot
+% 
 % See also:
-%   SAMPLE, EEGLAB 
-%
+%   tesa_pca_supress, tesa_edm 
+
 % Copyright (C) 2016  Nigel Rogasch & Julio C. Hernandez-Pavon
 % Monash University and Aalto University
 % nigel.rogasch@monash.edu; julio.hpavon@gmail.com
@@ -44,14 +54,45 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [EEG,inMat,outMat] = tesa_pcacompress( EEG, compVal )
+function [EEG,inMat,outMat] = tesa_pcacompress( EEG, varargin )
 
-%Sets truncate to default value if not specified
-if nargin <2;
-	compVal = 25;
+if nargin < 1
+	error('Not enough input arguments.');
 end
-if isempty(compVal)
-    compVal = 25;
+
+%define defaults
+options = struct('compVal',25,'plot','on');
+
+% read the acceptable names
+optionNames = fieldnames(options);
+
+% count arguments
+nArgs = length(varargin);
+if round(nArgs/2)~=nArgs/2
+   error('EXAMPLE needs key/value pairs')
+end
+
+for pair = reshape(varargin,2,[]) % pair is {propName;propValue}
+   inpName = pair{1}; % make case insensitive
+
+   if any(strcmpi(inpName,optionNames))%looks for known options and replaces these in options
+      options.(inpName) = pair{2};
+   else
+      error('%s is not a recognized parameter name',inpName)
+   end
+end
+
+%Check compVal input is correct
+if ischar(options.compVal)
+    error('''CompVal'' must be an integer, not a string. e.g. ''compVal'', 30.')
+elseif ~isinteger(options.compVal)
+    error('''CompVal'' must be an integer (i.e. a whole number).')
+end
+    
+
+%Check plot input is correct
+if ~(strcmp(options.plot,'on') || strcmp(options.plot,'off'))
+    error('''Plot must be either ''on'' or ''off'', e.g. ''plot'',''on''');
 end
 
 %Reshapes 3D matrix to 2D
@@ -59,8 +100,8 @@ inMat=reshape(EEG.data,size(EEG.data,1),[],1);
 
 %Checks that number of dimensions is larger than compression value
 rankMat = rank(inMat);
-if rankMat <= compVal
-    error('Dimension of data (%d) is lower than the compression value (%d). Function terminated.', rankMat, compVal);
+if rankMat <= options.compVal
+    error('Dimension of data (%d) is lower than the compression value (%d). Function terminated.', rankMat, options.compVal);
 end
 
 %Runs singular value decomposition
@@ -68,18 +109,20 @@ end
 d=diag(S);
 
 %Compresses data by truncating to 'compVal' dimensions 
-C=U(:,1:compVal)*U(:,1:compVal)';
+C=U(:,1:options.compVal)*U(:,1:options.compVal)';
 outMat=C*inMat;
 
 %Reshapes 2D matrix to 3D matrix
 EEG.data = reshape(outMat,size(EEG.data,1),size(EEG.data,2),size(EEG.data,3));
 
-%Figures before and after suppression
-h1=figure; subplot(1,2,1), bar(d);grid;set(gca,'fontsize',16);title('Data before suppression'); 
-xlabel ('Dimensions'); ylabel ('Amplitude (A.U)');
-subplot(1,2,2), bar(d(1:compVal));grid;set(gca,'fontsize',16);title('Data after suppression'); 
-xlabel ('Dimensions'); ylabel ('Amplitude (A.U)');
+%Figures before and after compression
+if strcmp(options.plot,'on')
+    h1=figure; subplot(1,2,1), bar(d);grid;title('Data before compression'); 
+    xlabel ('Dimensions'); ylabel ('Amplitude (A.U)');
+    subplot(1,2,2), bar(d(1:options.compVal));grid;title('Data after compression'); 
+    xlabel ('Dimensions'); ylabel ('Amplitude (A.U)');
+end
 
-fprintf('Data compressed to %d dimensions\n', compVal);
+fprintf('Data compressed to %d dimensions\n', options.compVal);
         
 end
