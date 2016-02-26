@@ -15,6 +15,11 @@
 %                   download at: http://www.its.caltech.edu/~daw/teach.html
 %                   Once the toolbox is unzipped, please make sure this is
 %                   added to your matlab path.
+%                   
+%                   This script also uses a modified version of the EEGLAB
+%                   script chansel.m and a renamed version of the script select_data.m 
+%                   by John D'Errico available from: 
+%                   http://www.mathworks.com/matlabcentral/fileexchange/13857-graphical-data-selection-tool/all_files
 %
 % Usage:
 %   >>  EEG = tesa_findpulsepeak( EEG, elec, 'key1', value1... );
@@ -84,7 +89,7 @@
 %   EEG = tesa_findpulsepeak( EEG, 'Cz', 'repetitive', 'yes', 'ITI', 26, 'pulseNum', 40 ); %rTMS use 
 %
 % See also:
-%   tesa_finpulse, tesa_fixtrigger 
+%   tesa_findpulse, tesa_fixtrigger 
 
 % Copyright (C) 2015  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
@@ -182,7 +187,9 @@ if strcmp(options.dtrnd,'poly')
     f_y3 = polyval(p3,(1:numel(signal'))',[],mu3);
     sig  = signal'-f_y3;    
 elseif strcmp(options.dtrnd,'linear')
-    sig = detrend(signal,'linear',10) ; 
+%     sig = detrend(signal,'linear',10) ;
+    sig = detrend(signal,'linear') ; 
+
     % Y = detrend(X,'linear',BP) removes a continuous, piecewise linear trend.
     %     Breakpoint indices for the linear trend are contained in the vector BP.
     %     The default is no breakpoints, such that one single straight line is
@@ -214,6 +221,10 @@ tms = (1:numel(sig))';
 spk = detectspike((dat),tms,thrsh,1*EEG.srate,10*EEG.srate);
 artlat= squeeze(spk.tms);
 
+
+if strcmp(options.wpeaks,'gui'); 
+    options.plots='off';
+end 
 %Sanity plot
 if strcmp(options.plots,'on'); 
     figure; 
@@ -228,9 +239,46 @@ if strcmp(options.wpeaks,'neg') ;
     spk.tms(spk.amp>-thrsh)=[];
     spk.amp(spk.amp>-thrsh)=[];
 elseif strcmp(options.wpeaks,'gui'); 
-    gdspk = selectspike(spk);
-    clickToContinue
+    
+global redo
+    redo=true;
+    %gdspk = selectspike(spk);
+while redo==true
+    f= figure; 
+    h1= plot((tms(1:end)),(dat(1:end,1)),'b');
+    hold on;
+    h2= plot(spk.tms, spk.amp,'k.');  
+    title('Inspect the detected peaks...','BackgroundColor',[0.729411780834198 0.831372559070587 0.95686274766922])
+        h = uicontrol('Position', [5 5 150 20], 'String', 'continue with selection', ...
+                      'Callback', 'uiresume(gcbf)');
+        %disp('This will print immediately');
+        uiwait(gcf);
+        %disp('This will print after you click Continue');
+    title('   Click, Hold & Drag the mousepointer to select which peaks to keep...','BackgroundColor',[0.729411780834198 0.831372559070587 0.95686274766922])
+    select = tesa_selectdata('Return','selected','selectionmode','lasso','action','list','ignore',h1 ,'Verify','off' );
+    gdspk.tms=spk.tms(select);
+    gdspk.amp=spk.amp(select);
+    hold on; plot(gdspk.tms, gdspk.amp,'ro');  
+ButtonName = questdlg('Are you happy with the peaks selected?', ...
+                         'Verify Selection', ...
+                         'No-Redo', 'Yes-Continue', 'Cancel', 'Redo');
+   switch ButtonName,
+     case 'No-Redo',
+      redo=true;
+     case 'Yes-Continue',
+      redo=false;
+      case 'Cancel',
+          redo=false; close all ; return ;
+   end % switch
+close all
+end
+%       f= figure; 
+%     h1= plot((tms(1:end)),(dat(1:end,1)),'b');
+%     hold on;
+%     h2= plot(spk.tms, spk.amp,'k.');
+%     h3= plot(spk.tms(select), spk.amp(select),'g.');   
     spk= gdspk; 
+
 elseif strcmp(options.wpeaks,'pos');
     %select positive peaks
     spk.tms(spk.amp<thrsh)=[];
@@ -238,10 +286,12 @@ elseif strcmp(options.wpeaks,'pos');
 end 
 
 if strcmp(options.plots,'on'); 
-    %%sanity plot 
     hold on;
-    plot(spk.tms, spk.amp,'m.');
-end
+    h2= plot(spk.tms, spk.amp,'m.');
+end; 
+% 
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -272,9 +322,9 @@ if strcmp(options.paired,'yes')
     end
     
     %Check that refractory period is less that the ISI
-    if options.refract > options.ISI
-        error('The refractory period is shorter than the interstimulus interval. This will result in inaccurate detection of the test pulse. Script termninated.');
-    end
+%     if options.refract > options.ISI
+%         error('The refractory period is shorter than the interstimulus interval. This will result in inaccurate detection of the test pulse. Script termninated.');
+%     end
     
     %Check that single and paired labels are unique
     for a = 1:size(options.pairLabel,2)
