@@ -65,13 +65,10 @@ if sum(mean(EEG.data(:,tInd1,:),3)) == 0 || sum(mean(EEG.data(:,tInd2,:),3)) == 
 end
 
 % Submatrix according to the time interval where we want to carry out the suppression
-subMat = mean(EEG.data,3); %Mean of the matrix to compute the Submatrix
-Xsub = subMat(:,tInd1:tInd2);%Submatrix
-
-
-
+ subMat = mean(EEG.data,3); %Mean of the matrix to compute the Submatrix
+ Xsub = subMat(:,tInd1:tInd2);%Submatrix
+ 
 %Suppression by PC's
-
 C=0.9999; % Constant 0.9<=C<=1 to preserve the rank of matrix
 [U,D,V]=svd(Xsub*Xsub'); % SVD of submatrix to carry out suppression
 for N=1:5; %Define the number of PC´s to be removed
