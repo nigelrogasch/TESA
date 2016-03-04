@@ -8,12 +8,16 @@
 %                           algorithms already sort components so this will be of limited use. 
 % Usage:
 %   >>  EEG = tesa_sortcomps( EEG );
+%   >>  [EEG, varsPerc] = tesa_sortcomps( EEG ); % Outputs the percentage of overall variance accounted for by the average time course of each component
 %
 % Inputs:
 %   EEG                 - EEGLAB EEG structure
 % 
 % Outputs:
 %   EEG                 - EEGLAB EEG structure
+%   varsPerc            - vector with % variance accounted for by the
+%                       time course (averaged across trials) for each
+%                       component. Output is sorted by variance.
 %
 % See also:
 %   tesa_autocompselect 
@@ -35,7 +39,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function EEG = tesa_sortcomps( EEG )
+function [EEG, varsPerc] = tesa_sortcomps( EEG )
 
 %Check input for ICA weights
 if isempty(EEG.icawinv)
@@ -45,6 +49,7 @@ end
 vars = arrayfun(@(x)var(mean(eeg_getdatact(EEG, 'component', [x], 'projchan', []),3)),1:size(EEG.icawinv,2)); %extracts time course for each component
 vars_norm = vars/sum(vars)*100; %calculates the % variance of each component relative to all components
 [xSorted, ixsSort] = sort(vars_norm, 'descend'); %ranks components based on %variance
+varsPerc = vars_norm(ixsSort); 
 
 EEG.icawinv = EEG.icawinv(:,ixsSort); %alters inverse weights matrix based on component variance order
 EEG.icaweights = EEG.icaweights(ixsSort,:); %alters weights matrix based on component variance order
