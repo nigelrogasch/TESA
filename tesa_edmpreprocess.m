@@ -20,56 +20,39 @@
 %
 % Inputs:
 %   EEG                 - EEGLAB EEG structure
-%  compVal             - [Integer] Number of dimensions to compress data
-%                           Default = 25.
 % 
 % Outputs:
 %   EEGwhite                 - Whitened data matrix to be used by FastICA
-%   outMat                   - Compressed data matrix     
-%   compVal                  - number of compressed dimensions   
+%   inMat                    - Centered matrix   
+%   rankMat                  - Rank of the data matrix 
 %
 % Copyright (C) 2016  Julio Cesar Hernandez Pavon, Aalto University,
 % Finland, julio.hpavon@gmail.com
 %
 
-function [EEGwhite,outMat,compVal] = tesa_edmpreprocess( EEG, compVal );
-
-%Sets truncate to default value if not specified
-if nargin <2;
-	compVal = 25;
-end
-if isempty(compVal)
-    compVal = 25;
-end
-
+function [EEGwhite,inMat,rankMat] = tesa_edmpreprocess(EEG, Nic);
 %Reshapes 3D matrix to 2D
 EEG1=reshape(EEG.data,size(EEG.data,1),[],1);
 
-%Average reference and centering
+% centering
 M=size(EEG1,1);
-EEG1=EEG1-ones(M,1)*mean(EEG1,1);%Reference potential level
 EEG1=EEG1-mean(EEG1,2)*ones(1,size(EEG1,2)); %Centering
 T=size(EEG1,2);
 
-% Data to be compressed
+% Data to be Whitened
 inMat=EEG1;
 
-%Checks that number of dimensions is larger than compression value
+%Checks that number of ICs is smaller than the rank of the data matrix
 rankMat = rank(inMat);
-if rankMat <= compVal
-    error('Dimension of data (%d) is lower than the compression value (%d). Function terminated.', rankMat, compVal);
+if Nic > rankMat
+    error('Number of ICs (%d) is bigger than than the rank of the data matrix (%d). Function terminated.',Nic,rankMat);
 end
 
 %Runs singular value decomposition
 [U,S,V]=svd(inMat*inMat');
 d=diag(sqrt(S));
 
-%Compresses data by truncating to 'compVal' dimensions 
-C=U(:,1:compVal)*U(:,1:compVal)';
-outMat=C*inMat;
-
 % Whitening matrix
-EEGwhite=sqrt(T)*diag(1./d(1:compVal))*U(:,1:compVal)'*outMat; %Whitening matrix
-fprintf('Data compressed to %d dimensions\n', compVal);
+EEGwhite=sqrt(T)*diag(1./d)*U'*inMat; %Whitening matrix
         
 end
