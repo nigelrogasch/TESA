@@ -60,24 +60,21 @@
 % Optional input pairs for detecting artifact components (varargin):
 %   
 %   TMS-evoked muscle activity
-%   This type of artifact is detected by comparing the standard deviation
-%   of the mean time course of the component within a target window
-%   ('tmsMuscleWin') and a baseline window ('tmsMuscleBase'). A threhold is
-%   set by the user for detection (e.g. 6 means the SD in the target window
-%   is 6 times larger than in the base window). Components are stored under
-%   tmsMuscle.
+%   This type of artifact is detected by comparing the mean absolute amplitude
+%   of the component time course within a target window ('tmsMuscleWin') 
+%   and the mean absolute amplitude across the entire component time course. A threshold is
+%   set by the user for detection (e.g. 8 means the mean absolute amplitude in the target window
+%   is 8 times larger than the mean absolute amplitude across the entire time course). 
+%   Components are stored under tmsMuscle.
 %   'tmsMuscle','str' - 'on' | 'off'. A string which turns on TMS-evoked muscle 
 %                   activity detection. 
 %                   Default: 'on'
 %   'tmsMuscleThresh',int - An integer determining the threshold for
 %                   detecting components representing TMS-evoked muscle activity.
-%                   Default: 6
+%                   Default: 8
 %   'tmsMuscleWin',[start,end] - a vector describing the target window for
 %                   TMS-evoked muscle activity (in ms).
 %                   Default: [11,50]
-%   'tmsMuscleBase',[start,end] - a vector describing a comparison window
-%                   for comparing the target window with (in ms).
-%                   Default: [51,100]
 %   'tmsMuscleFeedback','str' - 'on' | 'off'. String turning on feedback
 %                   of TMS-evoked muscle threshold value for each component
 %                   in the command window.
@@ -85,7 +82,7 @@
 %                   Default: 'off'
 % 
 %   Eye blinks
-%   This type of artifact is detected by comparing the mean z score
+%   This type of artifact is detected by comparing the mean absolute z score
 %   (calculated on the component topography weights) of two electrodes close 
 %   to the eyes (e.g. 'Fp1' and 'Fp2'). A threhold is set by the user for detection 
 %   (e.g. 2.5 - the mean z score of the two electrodes needs to be larger than
@@ -128,23 +125,19 @@
 %
 %   Persistent muscle activity
 %   This type of artifact is detected by comparing the mean power of the 
-%   component time course frequency distribution between a low and high frequency window
-%   (calculated using an FFT across all trials). A threhold is set by the user for detection 
-%   (e.g. 0.5 means the high frequency power is 50% of the low frequency power). 
+%   component time course frequency distribution between a target window
+%   and the mean across all frequencies(calculated using an FFT across all trials). 
+%   A threhold is set by the user for detection (e.g. 0.6 means the high frequency 
+%   power is 60% of the total power). 
 %   Components are stored under muscle.
 %   'muscle','str' - 'on' | 'off'. A string which turns on muscle detection. 
 %                   Default: 'on'
 %   'muscleThresh',int - An integer determining the threshold for
 %                   detecting components representing muscle activity.
-%                   Default: 0.5
-%   'muscleFreqLow',[int,int] - a vector with the frequencies for the low
-%                   window (in Hz).
-%                   Default: [1,30] - Note the default low value will
-%                   adjust to match the minimum plot frequency defined by
-%                   'plotFreqX'.
-%   'muscleFreqHigh',[int,int] - a vector with the frequencies for the high
-%                   window (in Hz).
-%                   Default: [31,100] - Note the default high value will
+%                   Default: 0.6
+%   'muscleFreqWin',[int,int] - a vector with the frequencies for the target w
+%                   window(in Hz).
+%                   Default: [31,100] - Note the default higher value will
 %                   adjust to match the maximum plot frequency defined by
 %                   'plotFreqX'.
 %   'muslceFeedback','str' - 'on' | 'off'. String turning on feedback
@@ -157,7 +150,7 @@
 %   This type of artifact is detected by comparing z scores in individual 
 %   electrodes (calculated on the component topography weights). A threhold is 
 %   set by the user for detection (e.g. 4 means one or more electrodes has
-%   a z score of at least 4). Components are stored in elecNoise.
+%   an absolute z score of at least 4). Components are stored in elecNoise.
 %   'elecNoise','str' - 'on' | 'off'. A string which turns on electrode noise detection. 
 %                   Default: 'on'
 %   'elecNoiseThresh',int - An integer determining the threshold for
@@ -208,10 +201,10 @@ function EEG = tesa_compselect( EEG , varargin )
     end
 
     %define defaults
-    options = struct('comps',[], 'figSize','small','plotTimeX',[-200,500],'plotFreqX',[1,100],'tmsMuscle','on','tmsMuscleThresh',6,...
-        'tmsMuscleWin',[11,50],'tmsMuscleBase',[51,100],'tmsMuscleFeedback','off','blink','on','blinkThresh',2.5,'blinkElecs',[],...
-        'blinkFeedback','off','move','on','moveThresh',2,'moveElecs',[],'moveFeedback','off','muscle','on','muscleThresh',0.5,...
-        'muscleFreqLow',[],'muscleFreqHigh',[],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',4,'elecNoiseFeedback','off');
+    options = struct('comps',[], 'figSize','small','plotTimeX',[-200,500],'plotFreqX',[1,100],'tmsMuscle','on','tmsMuscleThresh',8,...
+        'tmsMuscleWin',[11,50],'tmsMuscleFeedback','off','blink','on','blinkThresh',2.5,'blinkElecs',[],...
+        'blinkFeedback','off','move','on','moveThresh',2,'moveElecs',[],'moveFeedback','off','muscle','on','muscleThresh',0.6,...
+        'muscleFreqWin',[],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',4,'elecNoiseFeedback','off');
 
     % read the acceptable names
     optionNames = fieldnames(options);
@@ -272,11 +265,8 @@ function EEG = tesa_compselect( EEG , varargin )
     end
     
     %Set muscle windows based on plotFreqX
-    if isempty(options.muscleFreqLow)
-        options.muscleFreqLow = [options.plotFreqX(1,1),30];
-    end
-    if isempty(options.muscleFreqHigh)
-        options.muscleFreqHigh = [31,options.plotFreqX(1,2)];
+    if isempty(options.muscleFreqWin)
+        options.muscleFreqWin = [31,options.plotFreqX(1,2)];
     end
     
     %Checks eye movement input, disables if both electrodes are not present.
@@ -389,22 +379,16 @@ function EEG = tesa_compselect( EEG , varargin )
                 error('Input for ''tmsMuscleThresh'' must be greater than 0.');
             elseif size(options.tmsMuscleWin,2)~=2
                 error('Input for ''tmsMusclesWin'' must be in the following format: [start,end]. e.g. [11,51].');
-            elseif size(options.tmsMuscleBase,2)~=2
-                error('Input for ''tmsMusclesBase'' must be in the following format: [start,end]. e.g. [51,100].');
             elseif options.tmsMuscleWin(1,1) < EEG.times(1,1) || options.tmsMuscleWin(1,2) > EEG.times(1,end)
                 error('Input for ''tmsMuscleWin'' must be within the limits of the data [%d to %d].',EEG.times(1,1),EEG.times(1,end));
-            elseif options.tmsMuscleBase(1,1) < EEG.times(1,1) || options.tmsMuscleBase(1,2) > EEG.times(1,end)
-                error('Input for ''tmsMuscleBase'' must be within the limits of the data [%d to %d].',EEG.times(1,1),EEG.times(1,end));
             end
         end
-                    
+                          
         [val1,mt1] = min(abs(EEG.times-options.tmsMuscleWin(1,1)));
         [val2,mt2] = min(abs(EEG.times-options.tmsMuscleWin(1,2)));
-        tmsMuscleSD = std(mean(temp(mt1:mt2,:),2));
-        [val1,bt1] = min(abs(EEG.times-options.tmsMuscleBase(1,1)));
-        [val2,bt2] = min(abs(EEG.times-options.tmsMuscleBase(1,2)));    
-        baseSD = std(mean(temp(bt1:bt2,:),2));
-        tmsMuscleRatio = tmsMuscleSD./baseSD;
+        muscleScore = abs(mean(temp,2));
+        winScore = mean(muscleScore(mt1:mt2,:),1);
+        tmsMuscleRatio = winScore./mean(muscleScore);
         if strcmpi(options.tmsMuscleFeedback,'on')
             fprintf('Comp. %d TMS-evoked muscle ratio is %s.\n', compNum,num2str(round(tmsMuscleRatio,2)));
         end
@@ -472,30 +456,23 @@ function EEG = tesa_compselect( EEG , varargin )
         if strcmpi(options.muscle,'on')
             
             %Checks input for muscle
-            if size(options.muscleFreqLow,2) ~=2
-                error('Inputs for ''muscleFreqLow'' must be in the following format: [low, high]. e.g. [1,30].');
-            elseif size(options.muscleFreqHigh,2) ~=2
-                error('Inputs for ''muscleFreqHigh'' must be in the following format: [low, high]. e.g. [31,100].');
-            elseif (options.muscleFreqLow(1,1) < options.plotFreqX(1,1) | options.muscleFreqLow(1,2) > options.plotFreqX(1,2))
-                error('Inputs for ''muscleFreqLow'' (%d to %d) are outside of the frequency range set by input ''plotFreqX'' (%d to %d). Please adjust.',options.muscleFreqLow(1,1),options.muscleFreqLow(1,2),options.plotFreqX(1,1),options.plotFreqX(1,2));
-            elseif (options.muscleFreqHigh(1,1) < options.plotFreqX(1,1) | options.muscleFreqHigh(1,2) > options.plotFreqX(1,2))
-                error('Inputs for ''muscleFreqHigh'' (%d to %d) are outside of the frequency range set by input ''plotFreqX'' (%d to %d). Please adjust.',options.muscleFreqHigh(1,1),options.muscleFreqHigh(1,2),options.plotFreqX(1,1),options.plotFreqX(1,2));
+            if size(options.muscleFreqWin,2) ~=2
+                error('Inputs for ''muscleFreqWin'' must be in the following format: [low, high]. e.g. [31,100].');
+            elseif (options.muscleFreqWin(1,1) < options.plotFreqX(1,1) | options.muscleFreqWin(1,2) > options.plotFreqX(1,2))
+                error('Inputs for ''muscleFreqWin'' (%d to %d) are outside of the frequency range set by input ''plotFreqX'' (%d to %d). Please adjust.',options.muscleFreqWin(1,1),options.muscleFreqWin(1,2),options.plotFreqX(1,1),options.plotFreqX(1,2));
             end
         end
             
-        [val1,lowF1] = min(abs(freq-options.muscleFreqLow(1,1)));
-        [val2,lowF2] = min(abs(freq-options.muscleFreqLow(1,2)));
-        lowFreq = mean(Y2(:,lowF1:lowF2),2);
-        [val1,highF1] = min(abs(freq-options.muscleFreqHigh(1,1)));
-        [val2,highF2] = min(abs(freq-options.muscleFreqHigh(1,2)));    
-        highFreq = mean(Y2(:,highF1:highF2),2);
-        muscleRatio = highFreq./lowFreq;
+        [val1,winF1] = min(abs(freq-options.muscleFreqWin(1,1)));
+        [val2,winF2] = min(abs(freq-options.muscleFreqWin(1,2)));
+        winFreq = mean(Y2(:,winF1:winF2),2);
+        allFreq = mean(Y2,2);
+        muscleRatio = winFreq./allFreq;
         if strcmpi(options.muscleFeedback,'on')
             fprintf('Comp. %d muscle ratio is %s.\n', compNum,num2str(round(muscleRatio,2)));
         end
 
         %Electrode noise
-           
         elecNoise = abs(tempCompZ) > abs(options.elecNoiseThresh);
         if strcmpi(options.elecNoiseFeedback,'on')
             fprintf('Comp. %d maximum electrode z score is %s.\n', compNum,num2str(round(max(tempCompZ),2)));
