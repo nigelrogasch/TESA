@@ -1,25 +1,31 @@
-% tesa_detrend() - detrends the data by fiting and subtracting either a linear, exponential
-%                   or double exponential function to each channel and
-%                   trial. Note that the Curve Fitting Toolbox is required
+% tesa_detrend() - detrends the data by fiting and subtracting a function from
+%                   each channel. Either a linear (fitted and subtratcted from 
+%                   each trial), exponential or double exponential function 
+%                   (fitted to average and subtracted from each trial) can be fitted. 
+%                   Note that the Curve Fitting Toolbox is required
 %                   to run either the exponential fit or the double
 %                   exponential fit.
-%
+% 
 % Usage:
 %   >>  EEG = tesa_detrend( EEG, detrend, timeWin );
 %
-% Inputs:
+% Inputs (required):
 %   EEG             - EEGLAB EEG structure
-%   detrend         - string with type of detrend to perform; either
-%                   'linear', 'exponential' or 'double'
-%   tineWin         - vector with time range for detrending [t1,t2]
+%   detrend         - string with type of detrend to perform; 'linear'
+%   timeWin         - vector with time range for detrending [t1,t2]
 %    
 % Outputs:
 %   EEG             - EEGLAB EEG structure
-%
+% 
+% Examples:
+%   EEG = tesa_detrend( EEG, 'linear', [11,500]);
+%   EEG = tesa_detrend( EEG, 'exponential', [11,500]);
+%   EEG = tesa_detrend( EEG, 'double', [11,500]);
+% 
 % See also:
-%   SAMPLE, EEGLAB 
+%   tesa_fastica, tesa_edm, tesa_pcasupress 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -54,7 +60,7 @@ end
 
 %Check that the type of detrend is give correctly
 if ~(strcmp(detrend,'linear') || strcmp(detrend,'exponential') || strcmp(detrend,'double'))
-    error('The type of detrend to apply is incorrect. Please use either ''linear'', ''exponential'' or ''double exponential''.');
+    error('The type of detrend to apply is incorrect. Please use either ''linear'', ''exponential'' or ''double''.');
 end
     
 %find the time values to detrend
@@ -74,7 +80,7 @@ time = double(EEG.times(1,tp1:tp2));
 
 if strcmp(detrend,'linear');
     dataC = zeros(size(data,1),size(data,2),size(data,3));
-    fprintf('Start linear detrend\n');
+    fprintf('Start linear detrend.\n');
     for a = 1:size(data,1)
         for b = 1:size(data,3)
             linP = polyfit(time,data(a,:,b),1); %fit the data
@@ -82,7 +88,7 @@ if strcmp(detrend,'linear');
         end 
     end
     %display message
-    fprintf('Linear detrend complete\n');
+    fprintf('Linear detrend complete.\n');
 end
 
 %##### Fit exponential curve #####
@@ -93,34 +99,35 @@ if strcmp(detrend,'exponential');
         error('You need the Curve Fitting Toolbox to run this function');
     end
     dataC = zeros(size(data,1),size(data,2),size(data,3));
-    fprintf('Start exponential detrend (note this can take several minutes)\n');
+    fprintf('Start exponential detrend.\n');
+    dataMean = mean(data,3);
     for a = 1:size(data,1)
+        expP = fit(time',dataMean(a,:)','exp1');% search for solution
         for b = 1:size(data,3)
-            expP = fit(time,data(a,:,b),'exp1');% search for solution
             dataC(a,:,b) = data(a,:,b) - expP(time)';% correct the data
         end
-        fprintf('%s detrend is done\n',EEG.chanlocs(a).labels);
+%         fprintf('%s detrend is done\n',EEG.chanlocs(a).labels);
     end
-    fprintf('Exponential detrend complete\n');
+    fprintf('Exponential detrend complete.\n');
 end
      
 %##### Fit double exponential #####
-
 if strcmp(detrend,'double');
     v = ver;
     if ~sum(strcmp('Curve Fitting Toolbox',extractfield(v,'Name')'))
         error('You need the Curve Fitting Toolbox to run this function');
     end
     dataC = zeros(size(data,1),size(data,2),size(data,3));
-    fprintf('Start double exponential detrend (note this can take several minutes)\n');
+    fprintf('Start double exponential detrend.\n');
+    dataMean = mean(data,3);
     for a = 1:size(data,1)
+        exp2P = fit(time',dataMean(a,:)','exp2');
         for b = 1:size(data,3)
-            exp2P = fit(time',data(a,:,b)','exp2');
             dataC(a,:,b) = data(a,:,b) - exp2P(time)';% correct the data
-        end 
-        fprintf('%s detrend is done\n',EEG.chanlocs(a).labels);
+        end
+%         fprintf('%s detrend is done\n',EEG.chanlocs(a).labels);
     end
-    fprintf('Double exponential detrend complete\n');
+    fprintf('Double exponential detrend complete.\n');
 end
 
 %Insert corrected data
