@@ -1,10 +1,10 @@
-% pop_tesa_interpdata()  - replaces removed data using interpolated data. If
-%                           interpolation type is not given, a window pops up asking which type of
-%                           interpolation to use. Note that either tesa_removedata or
-%                           pop_tesa_removedata must be ran first.
-%
+% pop_tesa_interpdata()     - replaces removed data using interpolated data.
+%                           Note that either tesa_removedata or
+%                           pop_tesa_removedata must be ran prior to this function.
 % Usage:
-%   >>  EEG = tesa_interpdata( EEG, interpolation, interpWin );
+%   >>  EEG = pop_tesa_interpdata( EEG ); % Pop up window
+%   >>  EEG = pop_tesa_interpdata( EEG, interpolation );
+%   >>  EEG = pop_tesa_interpdata( EEG, interpolation, interpWin );
 %
 % Inputs:
 %   EEG                 - EEGLAB EEG structure
@@ -15,12 +15,16 @@
 %                           default = [20,20];
 %    
 % Outputs:
-%   EEG             - EEGLAB EEG structure
+%   EEG                 - EEGLAB EEG structure
+% 
+% Examples
+%   EEG = pop_tesa_interpdata( EEG, 'linear' ); %replaces missing data with linear interpolation. Linear function is fitted on data point before and after missing data.
+%   EEG = pop_tesa_interpdata( EEG, 'cubic', [50,50] ); %replaces mising data with cubic interpolation. Cubic is fitted on data 50 ms before and 50 ms after missing data
 %
 % See also:
-%   SAMPLE, EEGLAB 
+%   pop_tesa_removedata
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -54,18 +58,19 @@ end
 % -------------
 if nargin < 2
    
-    geometry = {[1 1] 1 1 [1 0.5] [1 0.5]};
+    geometry = {1 [1 0.5] 1 1 [1 0.3] [1 0.3]};
     
-    uilist = {{'style', 'text', 'string', 'Type of interpolation'} ...
+    uilist = {{'style', 'text', 'string', 'Interpolate missing data','fontweight','bold'} ...
+              {'style', 'text', 'string', 'Type of interpolation'} ...
               {'style', 'popupmenu', 'string', 'Linear|Cubic' 'tag' 'interp' } ...
               {}...
               {'style', 'text', 'string', 'Time window for fitting cubic (optional)','fontweight','bold'} ...
-              {'style', 'text', 'string', 'Time before removed data (in ms) [default=20]'} ...
-              {'style', 'edit', 'string', ''} ...
-              {'style', 'text', 'string', 'Time after removed data (in ms) [default=20]'} ...
-              {'style', 'edit', 'string', ''}};
+              {'style', 'text', 'string', 'Time before removed data (in ms)'} ...
+              {'style', 'edit', 'string', '20'} ...
+              {'style', 'text', 'string', 'Time after removed data (in ms)'} ...
+              {'style', 'edit', 'string', '20'}};
              
-    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Interpolate removed data -- pop_tesa_interpolatedata()', 'helpcom', 'pophelp(''tesa_interpolatedata'')');
+    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Interpolate removed data -- pop_tesa_interpdata()', 'helpcom', 'pophelp(''pop_tesa_interpdata'')');
     
     %extract interpolation type
     if result{1,1} == 1

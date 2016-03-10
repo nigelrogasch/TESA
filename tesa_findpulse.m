@@ -72,7 +72,7 @@
 % See also:
 %   tesa_findpulsepeak, tesa_fixtrigger
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -306,7 +306,7 @@ if strcmp(options.paired,'yes')
     for a = 1:size(options.pairLabel,2)
         uniCount(1,a) = sum(strcmp(options.pairLabel{1,a},stimLabel));
         if uniCount(1,a) == 0
-            error('No pulses for condition ''%s'' were detected.',options.pairLabel{1,a})
+            warning('No pulses for condition ''%s'' were detected.',options.pairLabel{1,a})
         else
             fprintf('%d paired test pulses detected and labelled as ''%s''. Conditioning pulses labelled as ''con''.\n',uniCount(1,a),options.pairLabel{1,a});
         end

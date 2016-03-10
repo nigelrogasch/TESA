@@ -1,6 +1,8 @@
 % tesa_filtbutter() - filters the data using a zero-phase butterworth
 %                   filter. Either a bandpass or bandstop filter can be
 %                   implemented. The filter order is defined by the user.
+%                   This function uses the matlab butter and filtfilt
+%                   functions.
 %
 % Usage:
 %   >>  EEG = tesa_filtbutter( EEG, high, low, ord, type );
@@ -15,7 +17,7 @@
 %                   Example: 50
 %   ord             - integer (required). Filter order.
 %                   Example: 4 (designs a fourth order butterworth filter)
-%   type            - 'str' (required). 'bandpass' | 'stop'. Designs either
+%   type            - 'str' (required). 'bandpass' | 'bandstop'. Designs either
 %                   a zerophase bandpass or bandstop butterworth filter
 %    
 % Outputs:
@@ -23,12 +25,12 @@
 %
 % Examples
 %   EEG = tesa_filtbutter( EEG, 1, 100, 4, 'bandpass' ); %zerophase, 4th-order bandpass butterworth filter between 1 to 100 Hz
-%   EEG = tesa_filtbutter( EEG, 48, 52, 4, 'stop' ); %zerophase, 4th-order bandstop butterworth filter between 48-52 Hz
+%   EEG = tesa_filtbutter( EEG, 48, 52, 4, 'bandstop' ); %zerophase, 4th-order bandstop butterworth filter between 48-52 Hz
 % 
 % See also:
 %   eegfiltnew
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -60,12 +62,16 @@ elseif high > low
     error('Input ''high'' needs to be less than input ''low''.')
 elseif ~isnumeric(ord)
     error('Input ''ord'' needs to be a number, not a string. e.g. 4, not ''4''.')
-elseif ~(strcmp(type,'bandpass') || strcmp(type,'stop'))
-    error('Input ''type'' needs to be either ''bandpass'' or ''stop''.')
+elseif ~(strcmp(type,'bandpass') || strcmp(type,'bandstop'))
+    error('Input ''type'' needs to be either ''bandpass'' or ''bandstop''.')
 end
 
 Fs = EEG.srate;
 ordIn = ord/2;
+
+if strcmpi(type,'bandstop')
+    type = 'stop';
+end
 
 [z1 p1] = butter(ordIn, [high low]./(Fs/2), type);
 

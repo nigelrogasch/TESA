@@ -5,13 +5,12 @@
 %                   The script works by extracting a
 %                   single channel and finding the time points in which the 
 %                   first derivatives exceed a certain threshold (defined 
-%                   by 'rate'). Paired pulses and repetitive TMS trains can
-%                   also be deteceted.
+%                   by 'rate'). Paired pulses can also be detected.
 % 
 %                   IMPORTANT: If you need to use this function, make sure
 %                   that the initial epochs you use are larger than the
 %                   final epoch size you desire. If the initial epoch size is
-%                   too small, the new epoch window will be out of range of
+%                   too small, the new epoch window will be out of range 
 %                   with the new triggers. E.g. inital epoch is -100 to 100
 %                   and the trigger is shifted 10 ms so the new 0 now sits
 %                   at 10 ms. Re-epoching the data to -100 to 100 won't
@@ -21,16 +20,18 @@
 %                   
 %
 % Usage:
-%   >>  EEG = tesa_fixtrigger( EEG, elec, newEpoch );
-%   >>  EEG = tesa_fixtrigger( EEG, elec, newEpoch, varargin );
+%   >>  EEG = tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel );
+%   >>  EEG = tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel, 'key1', value1... );
 %
 % Inputs:
 %   EEG             - EEGLAB EEG structure
-%   elec            - string with electrode to use for finding artifact
-%   newEpoch        - vector with start and end time of new epoch in
+%   elec            - [required] string with electrode to use for finding artifact
+%   newEpoch        - [required] vector with start and end time of new epoch in
 %                   seconds (following pop_epoch convention). 
 %                   Example: [-1,1] %For -1 s to 1s epoch
-% 
+%   tmsLabel        - [required] string indicating the trigger that requires 
+%                   correcting (e.g. 'TMS')  
+%                   
 % Optional input pairs:
 %   'refract',int   - int defines the refractory period (the time for the
 %                   TMS artefact to recover below the rate of change). int
@@ -38,42 +39,28 @@
 %                   default = 3
 %   'rate',int      - int defines the rate of change of the TMS artifact in
 %                   uV/ms. 
-%                   default = 1e5
-%   'tmsLabel','str'- 'str' is a string for the single TMS label.  
-%                   default = 'TMS'
+%                   default = 1e4
 %  
 % Input pairs for detecting paired pulses
-%   'paired','str'  - required. 'str' - type 'yes' to turn on paired detection
+%   'paired','str'  - [required] 'str' - type 'yes' to turn on paired detection
 %                   default = 'no'
-%   'ISI', [int]    - required. [int] is a vector defining interstimulus intervals
+%   'ISI', [int]    - [required] [int] is a vector defining interstimulus intervals
 %                   between conditioning and test pulses. Multiple ISIs can 
 %                   be defined as [1,2,...]. 
 %                   default = []
-%   'pairLabel',{'str'} - required if more than 1 ISI. {'str'} is a cell array
-%                   containing string labels for different ISI conditions.  
-%                   Multiple labels can be defined as {'SICI','LICI',...}.
-%                   The number of labels defined must equal the number of
-%                   ISI conditions defined.
-%                   default = {'TMSpair'}
-% 
-%  Input pairs for detecting repetitive TMS trains
-%  'repetitive','str' - required. 'str' - type 'yes' to turn on repetitive detection
-%                   default = 'no'
-%   'ITI', int      - required. int defines the inter-train interval in ms.
-%                   For example, if a 10 Hz rTMS condition is used with 4s
-%                   of stimulation (40 pulses) and 26s of rest, ITI = 2600;
-%                   default = []
-%   'pulseNum', int - required. int defines the number of pulses in a
-%                   train. Using the above example, this would be 40. 
-%                   deafult = []
-%    
+%     
 % Outputs:
 %   EEG             - EEGLAB EEG structure
 %
+%   % Examples
+%   EEG = tesa_fixtrigger( EEG, 'Cz', [-0.8,0.8], 'TMS' ); %default use
+%   EEG = tesa_fixtrigger( EEG, 'Fz', [-0.7,0.7], 'TMS', 'refract', 4, 'rate', 2e5 ); %user defined input
+%   EEG = tesa_fixtrigger( EEG, 'Cz', [-0.8,0.8], 'LICI', 'paired', 'yes', 'ISI', 100 ); %paired pulse use
+%
 % See also:
-%   SAMPLE, EEGLAB 
+%   tesa_findpulse, tesa_findpulsepeak
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -90,15 +77,14 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function EEG = tesa_fixtrigger( EEG, elec, newEpoch, varargin )
+function EEG = tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel, varargin )
 
-if nargin < 2
+if nargin < 4
 	error('Not enough input arguments.');
 end
 
 %define defaults
-options = struct('refract',3,'rate',1e5,'tmsLabel','TMS','paired','no','ISI',[],'pairLabel',{'TMSpair'},'repetitive','no','ITI',[],'pulseNum',[]);
-options.pairLabel = cellstr(options.pairLabel);
+options = struct('refract',3,'rate',1e4,'paired','no','ISI',[]);
 
 % read the acceptable names
 optionNames = fieldnames(options);
@@ -119,12 +105,32 @@ for pair = reshape(varargin,2,[]) % pair is {propName;propValue}
    end
 end
 
+%check new epoch inputs
+if size(newEpoch,2) ~= 2
+    error('Input for ''newEpoch'' needs to be in the format [start, end]. e.g. [-1,1]. Note time is in seconds.');
+elseif newEpoch(1,1) < EEG.xmin || newEpoch(1,2) > EEG.xmax
+    error('The new epoch size is outside of the range of the existing epoch. Note time is in seconds.');
+end
+
+%check that tmsLabel exists
+for a = 1:size(EEG.event,2)
+    eventName{a,1} = EEG.event(a).type;
+end
+eventNameU = unique(eventName);
+
+if sum(strcmp(tmsLabel,eventNameU)) == 0
+   eventNameU = eventNameU';
+    for a = 1:size(eventNameU,2)
+        eventNameU{2,a} = ' ';
+    end 
+    tempOut = reshape(eventNameU,1,[]);
+    tempStr = [tempOut{1,:}];
+    error('''tmsLabel'' input ''%s'' does not exist. Available labels are: %s.\n',tmsLabel,tempStr)
+end
+    
 %check that paired and repetitive have been correctly called
 if ~(strcmp(options.paired,'no') || strcmp(options.paired,'yes'))
     error('paired must be either ''yes'' or ''no''.');
-end
-if ~(strcmp(options.repetitive,'no') || strcmp(options.repetitive,'yes'))
-    error('repetitive must be either ''yes'' or ''no''.');
 end
 
 %finds channel for thresholding
@@ -142,36 +148,34 @@ end
 data = EEG.data(num,:,:);
 epTime = reshape(1:1:(size(EEG.data,2)*size(EEG.data,3)),[],size(EEG.data,3))';
 
-%Trims any white space from the single label
-options.tmsLabel = strtrim(options.tmsLabel);
-
 %For single pulse data
-if strcmp(options.paired,'no') && strcmp(options.repetitive,'no')
+if strcmp(options.paired,'no')
     for a = 1:size(data,3)
 
         %Calculate derivatives
         h = (1/EEG.srate)*1000;     %step size in ms
-        der1 = diff(data(1,:,a))/h;        %calculates first derivative
+        der1 = diff(data(1,:,a))/h; %calculates first derivative
 
         %finds artifact (defined as first derivative > rate)
         rateS = options.rate.*h; %Convert rate in to change in uV per sample
         logstim = abs(der1)>rateS;
         samp =(1:size(data,2));
         stim = samp(logstim);
-
+        
+        if isempty(stim)
+            error('No stimulus artifacts were found in trial %d. Please adjust ''rate'' trying a lower number. Note that ''rate'' default is 1e4.',a);
+        end
+            
         %Creates new event info
-        n = size(EEG.event,2);
-        p = size(EEG.urevent,2);
-        EEG.event(1,n+1).type = options.tmsLabel;
-        EEG.event(1,n+1).latency = epTime(a,stim(1,1));
-        EEG.event(1,n+1).urevent = p+1;
-        EEG.urevent(1,p+1).type = options.tmsLabel;
-        EEG.urevent(1,p+1).latency = epTime(a,stim(1,1));
-
+        for b = 1:size(EEG.event,2)
+            if strcmp(EEG.event(b).type,tmsLabel) && EEG.event(b).epoch == a
+                EEG.event(b).latency = epTime(a,stim(1,1));
+            end
+        end
     end
 
     %Re-epochs data
-    EEG = pop_epoch( EEG, {options.tmsLabel}, newEpoch, 'epochinfo', 'yes');
+    EEG = pop_epoch( EEG, {tmsLabel}, newEpoch, 'epochinfo', 'yes');
 end
     
 %For paired pulse data
@@ -182,33 +186,10 @@ if strcmp(options.paired,'yes')
             error('Please provide the interstimulus interval (ISI) for detecting paired pulse.');
         end
 
-        %If more than one ISI provided, check that an equal number of labels
-        %have been provided
-        if size(options.ISI,2) > 1
-            if size(options.ISI,2) ~= size(options.pairLabel,2)
-                error('Number of paired labels must equal the number of interstimulus intervals provided. Use ''pairLabel'',{}, in function to provide names')
-            end
-        end
-
         %Check that refractory period is less that the ISI
         if options.refract > options.ISI
-            error('The refractory period is shorter than the interstimulus interval. This will result in inaccurate detection of the test pulse. Script termninated.');
+            error('The refractory period ''%d'' is shorter than the interstimulus interval ''%d''. This will result in inaccurate detection of the test pulse. Please shorten refractory period.\n',options.refract,options.ISI);
         end
-
-        %Check that single and paired labels are unique
-        for a = 1:size(options.pairLabel,2)
-            if strcmp(options.tmsLabel,options.pairLabel{1,a})
-                error('Paired label is the same as single label. Please ensure that labels are unique.');
-            end
-        end
-
-        %Check that paired labels are unique
-        if ~size(unique(options.pairLabel),2) == size(options.pairLabel,2)
-            error('Paired labels are not unique. Please ensure each label is different.')
-        end
-
-        %Trims any white space from the label names
-        options.pairLabel = strtrim(options.pairLabel);
 
         for x = 1:size(data,3)
 
@@ -225,6 +206,7 @@ if strcmp(options.paired,'yes')
             %Remove triggers within refractory period
             sRef = ceil(EEG.srate./1000.*options.refract); %converts refractory period to samples
             refPer = stim(1,1)+sRef; %defines refractory period following stimulus
+            stimAll = [];
             stimAll(1,1) = stim(1,1);
             for a = 2:size(stim,2)
                 if stim(1,a) > refPer
@@ -233,6 +215,11 @@ if strcmp(options.paired,'yes')
                 end 
             end
 
+            % Check if artifact was found
+            if isempty(stimAll)
+                error('No stimulus artifacts were found in trial %d. Please adjust ''rate'' trying a lower number. Note that ''rate'' default is 1e4.',x);
+            end
+            
             %Determine whether trial has single or paired data
             stimLabel = [];
             for a = 1:size(options.ISI,2)
@@ -242,114 +229,30 @@ if strcmp(options.paired,'yes')
                 for b = 1:size(diffStim,2)
                     if diffStim(1,b) > sISI-prec && diffStim(1,b) < sISI+prec
                         stimLabel{1,1} = 'con';
-                        stimLabel{1,2} = options.pairLabel{1,a};
+                        stimLabel{1,2} = tmsLabel;
+                    else
+                        stimLabel{1,1} = tmsLabel;
                     end
                 end
             end
-
+            
             %Creates new event info
-            if isempty(stimLabel)
-                n = size(EEG.event,2);
-                p = size(EEG.urevent,2);
-                EEG.event(1,n+1).type = options.tmsLabel;
-                EEG.event(1,n+1).latency = epTime(x,stimAll(1,1));
-                EEG.event(1,n+1).urevent = p+1;
-                EEG.urevent(1,p+1).type = options.tmsLabel;
-                EEG.urevent(1,p+1).latency = epTime(x,stimAll(1,1));
-                stimKeep{1,x} = options.tmsLabel;
-            else
-                n = size(EEG.event,2);
-                p = size(EEG.urevent,2);
-                %Conditioning pulse
-                EEG.event(1,n+1).type = stimLabel{1,1};
-                EEG.event(1,n+1).latency = epTime(x,stimAll(1,1));
-                EEG.event(1,n+1).urevent = p+1;
-                EEG.urevent(1,p+1).type = stimLabel{1,1};
-                EEG.urevent(1,p+1).latency = epTime(x,stimAll(1,1));
-                %Test pulse
-                EEG.event(1,n+2).type = stimLabel{1,2};
-                EEG.event(1,n+2).latency = epTime(x,stimAll(1,2));
-                EEG.event(1,n+2).urevent = p+2;
-                EEG.urevent(1,p+2).type = stimLabel{1,2};
-                EEG.urevent(1,p+2).latency = epTime(x,stimAll(1,2));
-                stimKeep{1,x} = stimLabel{1,2};
+            for b = 1:size(EEG.event,2)
+                if strcmp(EEG.event(b).type,tmsLabel) && EEG.event(b).epoch == x
+                    if size(stimLabel,2) == 1
+                        error('Only one artefact was found in trial %d. Please check the ''ISI'' or adjust ''rate'' trying a lower number. Note that ''rate'' default is 1e4.',x);
+                    end
+                    EEG.event(b).latency = epTime(x,stimAll(1,2));
+                end
             end
+            
         end
         
         %Re-epochs data
-        stimNames = unique(stimKeep);
-        EEG = pop_epoch( EEG, {stimNames{:}}, newEpoch, 'epochinfo', 'yes');
-end
-
-%For repetitive data
-if strcmp(options.repetitive,'yes') 
-    
-    %Check that ITI has been provided
-    if isempty(options.ITI)
-        error('Please provide the inter-train interval (ITI - the time between trains of pulses). The ITI is in ms.');
-    end
-    
-    %Check that pulseNum has been provided
-    if isempty(options.pulseNum)
-        error('Please provide the number of pulses in a train (pulseNum).');
-    end
-    
-    for x = 1:size(data,3)
-        
-        %Calculate derivatives
-        h = (1/EEG.srate)*1000;     %step size in ms
-        der1 = diff(data(1,:,x))/h;        %calculates first derivative
-
-        %finds artifact (defined as first derivative > rate)
-        rateS = options.rate.*h; %Convert rate in to change in uV per sample
-        logstim = abs(der1)>rateS;
-        samp =(1:size(data,2));
-        stim = samp(logstim);
-
-        %Remove triggers within refractory period
-        sRef = ceil(EEG.srate./1000.*options.refract); %converts refractory period to samples
-        refPer = stim(1,1)+sRef; %defines refractory period following stimulus
-        stimAll(1,1) = stim(1,1);
-        for a = 2:size(stim,2)
-            if stim(1,a) > refPer
-                stimAll(1,size(stimAll,2)+1) = stim(1,a);
-                refPer = stim(1,a)+sRef;
-            end 
-        end
-        
-        sITI = ceil(EEG.srate./1000.*options.ITI); %converts ITI to samples
-        prec = ceil(EEG.srate./1000.*5); %precision for searching for second pulse = +/-5 ms
-        diffStim = diff([stimAll(1,1)-options.ITI stimAll]);
-        stimLabel = [];
-        for a = 1:size(diffStim,2)
-            if diffStim(1,a) > options.ITI-prec
-                if stimAll(1,a+(options.pulseNum-1))-stimAll(1,a) > diffStim(1,a+1).*(options.pulseNum-1)+10
-                    error('Number of pulses in detected train are different from that specified. Script terminated');
-                else
-                    for b = 1:options.pulseNum
-                        stimLabel{1,a+(b-1)} = ['TMS',num2str(b)];
-                    end
-                end
-            end
-        end
-        
-        n=size(EEG.event,2);
-        p = size(EEG.urevent,2);
-        for a=1:size(stimAll,2);
-            EEG.event(1,a+n).type=stimLabel{1,a};
-            EEG.event(1,a+n).latency=epTime(x,stimAll(1,a));
-            EEG.event(1,a+p).urevent=p+a;
-            EEG.urevent(1,a+n).type=stimLabel{1,a};
-            EEG.urevent(1,a+p).latency=epTime(x,stimAll(1,a));
-        end;
-        
-    end
-    
-    %Re-epochs data
-    EEG = pop_epoch( EEG, {stimLabel{1,1}}, newEpoch, 'epochinfo', 'yes');
+        EEG = pop_epoch( EEG, {tmsLabel}, newEpoch, 'epochinfo', 'yes');
 end
 
 %Display
-fprintf('New triggers added and data re-epoched.\n');
+fprintf('Latency of events ''%s'' adjusted and data re-epoched.\n',tmsLabel);
 
 end

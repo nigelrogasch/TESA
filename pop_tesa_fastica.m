@@ -1,4 +1,4 @@
-% tesa_fastica()    - runs FastICA on data using some common settings applied
+% pop_tesa_fastica()    - runs FastICA on data using some common settings applied
 %                   for TMS-EEG data analysis using EEGLAB pop_runica function. 
 %                   See the publications listed below for further details. 
 %                   A stabilization option is also included which can help 
@@ -20,8 +20,8 @@
 %                   http://research.ics.aalto.fi/ica/fastica/code/dlcode.shtml                   
 %                   
 % Usage:
-%   >>  EEG = tesa_fastica( EEG ); %default use
-%   >>  EEG = tesa_fastica( EEG, 'key1',value1... ); 
+%   >>  EEG = pop_tesa_fastica( EEG ); % pop up window
+%   >>  EEG = pop_tesa_fastica( EEG, 'key1',value1... ); 
 %
 % Inputs:
 %   EEG             - EEGLAB EEG structure
@@ -46,8 +46,8 @@
 %   EEG             - EEGLAB EEG structure
 %
 % Examples
-%   EEG = tesa_fastica( EEG ); %default use
-%   EEG = tesa_fastica( EEG, 'g','gauss','stabilization','on' ); % Uses the gauss contrast function and turns on the stabilized FastICA version to aid with convergence.
+%   EEG = pop_tesa_fastica( EEG ); %default use
+%   EEG = pop_tesa_fastica( EEG, 'g','gauss','stabilization','on' ); % Uses the gauss contrast function and turns on the stabilized FastICA version to aid with convergence.
 % 
 % See also:
 %   eegfiltnew
@@ -69,48 +69,59 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function EEG = tesa_fastica( EEG, varargin )
+ function [EEG com] = pop_tesa_fastica( EEG, varargin )
 
-if nargin < 1
-	error('Not enough input arguments.');
+com = '';          
+
+%check that data is present
+if isempty(EEG.data)
+    error('Data is empty');
 end
 
-%Check inputs
-%define defaults
-options = struct('approach','symm','g','tanh','stabilization','off');
+% pop up window
+% -------------
+if nargin < 2
+       
+    geometry = {1 [1 1] [1 1] [1 1]};
 
-% read the acceptable names
-optionNames = fieldnames(options);
-
-% count arguments
-nArgs = length(varargin);
-if round(nArgs/2)~=nArgs/2
-   error('EXAMPLE needs key/value pairs')
-end
-
-for pair = reshape(varargin,2,[]) % pair is {propName;propValue}
-   inpName = pair{1}; % make case insensitive
-
-   if any(strcmpi(inpName,optionNames))%looks for known options and replaces these in options
-      options.(inpName) = pair{2};
-   else
-      error('%s is not a recognized parameter name',inpName)
-   end
-end
-
-%Checks inputs
-if ~(strcmp(options.approach,'symm') || strcmp(options.approach,'defl'))
-    error('Input for ''approach'' must be either ''symm'' or ''defl''. Input type ''symm'' is recommended for TMS-EEG. See help for further details.');
-elseif ~(strcmp(options.g,'tanh') || strcmp(options.g,'gauss') || strcmp(options.g,'pow3') || strcmp(options.g,'skew'))
-    error('Input for ''g'' must be either ''tanh'', ''gauss'',''pow3'' or ''skew''. Either ''tanh'' or ''gauss'' are recommended for TMS-EEG. See help for further details.');
-elseif ~(strcmp(options.stabilization,'on') || strcmp(options.stabilization,'off'))
-    error('Input for ''stabilization'' must be either ''on'' or ''off''.')
-end
-
-EEG = pop_runica(EEG,'icatype','fastica', 'approach', options.approach, 'g', options.g,'stabilization',options.stabilization);
-
-%display message
-fprintf('FastICA performed on data using ''%s'' approach and ''%s'' contrast function.\n',options.approach,options.g);
+    uilist = {{'style', 'text', 'string', 'Run FastICA','fontweight','bold'} ...
+              {'style', 'text', 'string', 'Approach'} ...
+              {'style', 'popupmenu', 'string', 'symmetric|deflation', 'tag', 'interp' } ...
+              {'style', 'text', 'string', 'Contrast function (g)'} ...
+              {'style', 'popupmenu', 'string', 'tanh|gauss|pow3|skew', 'tag', 'interp' } ...
+              {'style', 'text', 'string', 'stabilization'} ...
+              {'style', 'popupmenu', 'string', 'off|on', 'tag', 'interp' }};
+             
+    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Run FastICA -- pop_tesa_fastica()', 'helpcom', 'pophelp(''pop_tesa_fastica'')');
     
+    %Extract data 
+    if result{1,1} == 1
+        approach = 'symm';
+    elseif result{1,1} == 2
+       	approach = 'defl';
+    end
+    if result{1,2} == 1
+        g = 'tanh';
+    elseif result{1,2} == 2
+       	g = 'gauss';
+    elseif result{1,2} == 3
+       	g = 'pow3';
+    elseif result{1,2} == 4
+       	g = 'skew';
+    end
+    if result{1,3} == 1
+        stabilization = 'off';
+    elseif result{1,3} == 2
+       	stabilization = 'on';
+    end
+    
+end
 
+%Run script from input
+if nargin <2
+    EEG = tesa_fastica(EEG,'approach',approach,'g',g,'stabilization',stabilization);
+    com = sprintf('%s = pop_tesa_fastica( %s, ''approach'', ''%s'', ''g'', ''%s'', ''stabilization'', ''%s'' );', inputname(1), inputname(1), approach, g, stabilization );
+elseif nargin > 2
+    EEG = tesa_fastica(EEG,varargin{:});
+    com = sprintf('%s = pop_tesa_fastica( %s, %s );', inputname(1), inputname(1), vararg2str(varargin) );
 end

@@ -201,10 +201,10 @@ function EEG = tesa_compselect( EEG , varargin )
     end
 
     %define defaults
-    options = struct('comps',[], 'figSize','small','plotTimeX',[-200,500],'plotFreqX',[1,100],'tmsMuscle','on','tmsMuscleThresh',8,...
-        'tmsMuscleWin',[11,50],'tmsMuscleFeedback','off','blink','on','blinkThresh',2.5,'blinkElecs',[],...
-        'blinkFeedback','off','move','on','moveThresh',2,'moveElecs',[],'moveFeedback','off','muscle','on','muscleThresh',0.6,...
-        'muscleFreqWin',[],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',4,'elecNoiseFeedback','off');
+    options = struct('comps',[], 'figSize','small','plotTimeX',[],'plotFreqX',[],'tmsMuscle','on','tmsMuscleThresh',[],...
+        'tmsMuscleWin',[],'tmsMuscleFeedback','off','blink','on','blinkThresh',[],'blinkElecs',[],...
+        'blinkFeedback','off','move','on','moveThresh',[],'moveElecs',[],'moveFeedback','off','muscle','on','muscleThresh',[],...
+        'muscleFreqWin',[],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',[],'elecNoiseFeedback','off');
 
     % read the acceptable names
     optionNames = fieldnames(options);
@@ -225,12 +225,36 @@ function EEG = tesa_compselect( EEG , varargin )
        end
     end
     
-    %Set electrode defaults
+    %Set defaults
+    if isempty(options.plotTimeX)
+        options.plotTimeX = [-200,500];
+    end
+    if isempty(options.plotFreqX)
+        options.plotFreqX = [1,100];
+    end
+    if isempty(options.tmsMuscleThresh)
+        options.tmsMuscleThresh = 8;
+    end
+    if isempty(options.tmsMuscleWin)
+        options.tmsMuscleWin = [11,50];
+    end
+    if isempty(options.blinkThresh)
+        options.blinkThresh = 2.5;
+    end
     if isempty(options.blinkElecs)
         options.blinkElecs = {'Fp1','Fp2'};
     end
+    if isempty(options.moveThresh)
+        options.moveThresh = 2;
+    end
     if isempty(options.moveElecs)
         options.moveElecs = {'F7','F8'};
+    end
+    if isempty(options.muscleThresh)
+        options.muscleThresh = 0.6;
+    end
+     if isempty(options.elecNoiseThresh)
+        options.elecNoiseThresh = 4;
     end
     
     %Check for ICA
@@ -266,7 +290,7 @@ function EEG = tesa_compselect( EEG , varargin )
     
     %Set muscle windows based on plotFreqX
     if isempty(options.muscleFreqWin)
-        options.muscleFreqWin = [31,options.plotFreqX(1,2)];
+        options.muscleFreqWin = [30,options.plotFreqX(1,2)];
     end
     
     %Checks eye movement input, disables if both electrodes are not present.
@@ -416,7 +440,7 @@ function EEG = tesa_compselect( EEG , varargin )
 
         blinkRatio = mean(tempCompZ(eNum,:));
         if strcmpi(options.blinkFeedback,'on')
-            fprintf('Comp. %d blink ratio is %s.\n', compNum,num2str(round(blinkRatio,2)));
+            fprintf('Comp. %d blink ratio is %s.\n', compNum,num2str(abs(round(blinkRatio,2))));
         end
 
         %Lateral eye movement
@@ -469,13 +493,13 @@ function EEG = tesa_compselect( EEG , varargin )
         allFreq = mean(Y2,2);
         muscleRatio = winFreq./allFreq;
         if strcmpi(options.muscleFeedback,'on')
-            fprintf('Comp. %d muscle ratio is %s.\n', compNum,num2str(round(muscleRatio,2)));
+            fprintf('Comp. %d muscle ratio is %s.\n', compNum,num2str(abs(round(muscleRatio,2))));
         end
 
         %Electrode noise
         elecNoise = abs(tempCompZ) > abs(options.elecNoiseThresh);
         if strcmpi(options.elecNoiseFeedback,'on')
-            fprintf('Comp. %d maximum electrode z score is %s.\n', compNum,num2str(round(max(tempCompZ),2)));
+            fprintf('Comp. %d maximum electrode z score is %s.\n', compNum,num2str(abs(round(max(tempCompZ),2))));
         end
         
         %Select if component is artefact
@@ -536,6 +560,7 @@ function EEG = tesa_compselect( EEG , varargin )
 
         f = figure('KeyPressFcn',@(obj,evt) 0);
         f.Position = [xpos ypos sz(1) sz(2)];
+        f.Name = 'Press enter when selection is made.';
 
         %Plot time course
         subplot(2,2,1);

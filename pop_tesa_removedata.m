@@ -1,26 +1,31 @@
-% pop_tesa_removedata() - removes data between defined timepoints and replaces
-%                       data with 0s. Stores removed timepoints.If time range 
-%                       is not given, a window pops up
-%                       to ask for the value of the additional 
-%                       parameters.   
+% pop_tesa_removedata() - removes data between defined time points and replaces
+%                   data with 0s or the average of a defined period (e.g. a baseline period). 
+%                   Removed time points are stored in EEG.tmscut.
 %
 % Usage:
-%   >>  EEG = pop_tesa_removedata( EEG ); %pop-up window mode
-%   >>  EEG = pop_tesa_removedata( EEG, cutTimesTMS, cutTimesRec );
-%
+%   >>  EEG = pop_tesa_removedata( EEG ); % pop up window
+%   >>  EEG = pop_tesa_removedata( EEG, cutTimesTMS ); %replace with 0s
+%   >>  EEG = pop_tesa_removedata( EEG, cutTimesTMS, replaceTimes );% replace with average of defined period in ms
 %
 % Inputs:
 %   EEG             - EEGLAB EEG structure
-%   cutTimes        - vector with time range for removing data [t1,t2]
-%   cutTimesRec     - (optional) vector with time range for removing recharge artifact [t1,t2]
+%   cutTimesTMS     - (required) vector with time range for removing TMS artifact in ms. [t1,t2]
+%                       Example: [-10,10]
+%   replaceTimes    - (optional) vector with time range for calculating average to replace removed data in ms. [t1,t2]
+%                      If not included, data will be replaced with 0s.
+%                       Example: [-500, -100]
 %    
 % Outputs:
 %   EEG             - EEGLAB EEG structure
 %
+% Examples
+%   EEG = pop_tesa_removedata( EEG, [-10,10] ); %replace with 0s
+%   EEG = pop_tesa_removedata( EEG, [-10,10], [-500,-100] ); %replace with average of defined period in ms
+% 
 % See also:
-%   SAMPLE, EEGLAB 
+%   pop_tesa_interpdata 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -37,7 +42,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- function [EEG com] = pop_tesa_removedata( EEG, cutTimesTMS, cutTimesRec )
+ function [EEG com] = pop_tesa_removedata( EEG, cutTimesTMS, replaceTimes )
 
 com = '';          
 
@@ -47,53 +52,56 @@ if isempty(EEG.data)
 end
 
 if nargin == 2;
-	cutTimesRec = [];
+	replaceTimes = [];
 end
 
 % pop up window
 % -------------
 if nargin < 2
    
-    geometry = {1 [1 0.5] [1 0.5] 1 1 [1 0.5] [1 0.5]};
+    geometry = {[1 0.3 0.3] [1 0.3 0.3] 1 [1 0.3 0.3] [1 0.3 0.3] 1};
 
     uilist = {{'style', 'text', 'string', 'Remove TMS artifact','fontweight','bold'} ...
-              {'style', 'text', 'string', 'Minimum time to remove TMS artifact (in ms)'} ...
+              {'style', 'text', 'string', 'Minimum'} ...
+              {'style', 'text', 'string', 'Maximum'} ...
+              {'style', 'text', 'string', 'Time to remove TMS artifact (in ms)'} ...
               {'style', 'edit', 'string', ''} ...
-              {'style', 'text', 'string', 'Maximum time to remove TMS artifact (in ms)'} ...
-              {'style', 'edit', 'string', ''}...
+              {'style', 'edit', 'string', ''} ...
               {} ...
-              {'style', 'text', 'string', 'Remove recharge artifact (optional)','fontweight','bold'} ...
-              {'style', 'text', 'string', 'Minimum time to remove recharge artifact (in ms)'} ...
+              {'style', 'text', 'string', 'Replace data with baseline average','fontweight','bold'} ...
+              {'style', 'text', 'string', 'Minimum'} ...
+              {'style', 'text', 'string', 'Maximum'} ...
+              {'style', 'text', 'string', 'Baseline period for averaging (in ms)'} ...
               {'style', 'edit', 'string', ''} ...
-              {'style', 'text', 'string', 'Maximum time to remove recharge artifact (in ms)'} ...
-              {'style', 'edit', 'string', ''}};
+              {'style', 'edit', 'string', ''} ...
+              {'style', 'text', 'string', 'Optional (leave blank to replace with 0s)','fontAngle','italic'}};
              
-    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Remove artifact data -- pop_tesa_removedata()', 'helpcom', 'pophelp(''tesa_removedata'')');
+    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Remove artifact data -- pop_tesa_removedata()', 'helpcom', 'pophelp(''pop_tesa_removedata'')');
     
     %extract TMS artifact removal times. Error if not given.
-    if isempty(result)
-        error('No times for data removal were entered. Script terminated')     
+    if strcmp(result(1,1),'') || strcmp(result(1,2),'')
+        error('Please enter both a minimum and maximum time for data removal. e.g. -10 and 10')     
     else 
         cutTimesTMS = cellfun(@str2num,(result(:,1:2)));     
     end
     
     %extract recharge artifact removal times (optional).
     if strcmp(result(1,3),'')
-        cutTimesRec = [];
+        replaceTimes = [];
     elseif ~strcmp(result(1,3),'')
-        cutTimesRec = cellfun(@str2num,(result(:,3:4)));
+        replaceTimes = cellfun(@str2num,(result(:,3:4)));
     end
     
 end
 
 %remove data
-EEG = tesa_removedata( EEG, cutTimesTMS, cutTimesRec );
+EEG = tesa_removedata( EEG, cutTimesTMS, replaceTimes );
 
 % return the string command
-if isempty(cutTimesRec)
+if isempty(replaceTimes)
     com = sprintf('%s = pop_tesa_removedata( %s, %s );', inputname(1), inputname(1), mat2str(cutTimesTMS));
-elseif ~isempty(cutTimesRec)
-    com = sprintf('%s = pop_tesa_removedata( %s, %s, %s );', inputname(1), inputname(1), mat2str(cutTimesTMS), mat2str(cutTimesRec));
+elseif ~isempty(replaceTimes)
+    com = sprintf('%s = pop_tesa_removedata( %s, %s, %s );', inputname(1), inputname(1), mat2str(cutTimesTMS), mat2str(replaceTimes));
 end
 
 end
