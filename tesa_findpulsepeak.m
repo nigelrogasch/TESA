@@ -15,11 +15,6 @@
 %                   download at: http://www.its.caltech.edu/~daw/teach.html
 %                   Once the toolbox is unzipped, please make sure this is
 %                   added to your matlab path.
-%                   
-%                   This script also uses a modified version of the EEGLAB
-%                   script chansel.m and a renamed version of the script select_data.m 
-%                   by John D'Errico available from: 
-%                   http://www.mathworks.com/matlabcentral/fileexchange/13857-graphical-data-selection-tool/all_files
 %
 % Usage:
 %   >>  EEG = tesa_findpulsepeak( EEG, elec, 'key1', value1... );
@@ -29,8 +24,8 @@
 %   elec            - string with electrode to use for finding artifact
 % 
 % Optional input pairs:
-%   'dtrnd','str'  'poly'|'linear'|'off'. Defines the type of detrend used
-%                   to centre the data.
+%   'dtrnd','str'  'poly'|'gradient'|'median'|'linear'|'none'. Defines the type of detrend used
+%                   to centre the data, to generate an analytic signal.
 %                   default = poly
 %   'thrshtype','str'/int - 'dynamic'|'median'|value. Defines the type of
 %                   threshold used to determine peaks. Dynamic sets threshold 
@@ -173,29 +168,28 @@ if isempty(num)
 end
 
 %Extracts channel
-data = EEG.data(num,:);
-
+signal = EEG.data(num,:);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %FINDS PEAKS OF TMS ARTIFACTS
-
-signal=data; 
-
 % Detrend the data
 if strcmp(options.dtrnd,'poly')
     %baseline detrend  useing polyfit
-    [p3,s3,mu3] = polyfit((1:numel(signal'))',signal',6);
+    [p3,~,mu3] = polyfit((1:numel(signal'))',signal',6);
     f_y3 = polyval(p3,(1:numel(signal'))',[],mu3);
-    sig  = signal'-f_y3;    
+    sig  = signal'-f_y3;       
+elseif strcmp(options.dtrnd,'gradient')
+    % use the 1st derivative of the signal
+    sig =gradient(signal); 
+elseif strcmp(options.dtrnd,'median')
+    sig = signal - median(signal) ; 
 elseif strcmp(options.dtrnd,'linear')
-%     sig = detrend(signal,'linear',10) ;
-    sig = detrend(signal,'linear') ; 
-
+    sig = detrend(signal,'linear',10) ; 
     % Y = detrend(X,'linear',BP) removes a continuous, piecewise linear trend.
     %     Breakpoint indices for the linear trend are contained in the vector BP.
     %     The default is no breakpoints, such that one single straight line is
     %     removed from each column of X.
-else
-    sig = signal - median(signal) ; 
+else 
+   sig=signal; 
 end
 clear signal; 
 
@@ -228,7 +222,7 @@ end
 %Sanity plot
 if strcmp(options.plots,'on'); 
     figure; 
-    plot((tms(1:end)),(dat(1:end,1)),'b');
+    plot(tms,dat,'b');
     hold on;
     plot(spk.tms, spk.amp,'k.');
 end; 
@@ -261,7 +255,7 @@ while redo==true
     hold on; plot(gdspk.tms, gdspk.amp,'ro');  
 ButtonName = questdlg('Are you happy with the peaks selected?', ...
                          'Verify Selection', ...
-                         'No-Redo', 'Yes-Continue', 'Cancel', 'Redo');
+                         'No-Redo', 'Yes-Continue', 'Cancel', 'Yes-Continue');
    switch ButtonName,
      case 'No-Redo',
       redo=true;

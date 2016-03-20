@@ -131,11 +131,15 @@ if ~(strcmp(options.repetitive,'no') || strcmp(options.repetitive,'yes'))
     error('repetitive input must be either ''yes'' or ''no''.');
 end
 
-%if events are present, check that the EEG.event.type is a string
+%if events are present, check that the EEG.event.type is a string and that
+%the event name is different from that specified
 if ~isempty(EEG.event)
     for a = 1:size(EEG.event,2)
         if isnumeric(EEG.event(a).type)
             EEG.event(a).type = num2str(EEG.event(a).type);
+        end
+        if strcmp(EEG.event(a).type,options.tmsLabel)
+            error('The label ''%s'' already exists in the data. Please choose a different trigger label.',options.tmsLabel)
         end
     end
 end
@@ -184,6 +188,7 @@ if strcmp(options.plots,'on');
     plot(1:1:EEG.pnts,data(1,1:end),'b');
     hold on;
     plot(stimAll(1,1:end), stimAmp(1,1:end),'r.');
+    title(['TMS pulse artefacts identified in electrode ', elec]);
 end; 
 
 %Trims any white space from the single label

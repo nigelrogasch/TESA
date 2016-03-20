@@ -57,7 +57,7 @@
 % See also:
 %   tesa_tepextract, tesa_peakanalysis, tesa_peakoutput 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -216,7 +216,11 @@ else
 end
 xlabel('Time (ms)');
 
-if strcmp(options.tepType,'ROI')
+if strcmp(options.tepType,'data') && isempty(options.elec)
+    title('All electrodes');
+elseif strcmp(options.tepType,'data') && ~isempty(options.elec)
+    title(options.elec);
+elseif strcmp(options.tepType,'ROI')
     if isempty(options.tepName)
         tempName = fieldnames(EEG.ROI);
         titleIn = ['Region of interest (', tempName{1,1}, ')'];
@@ -263,7 +267,7 @@ end
 %Plot peaks found
 if strcmpi(options.plotPeak,'on')
     if strcmpi(options.tepType,'data')
-        error('Peaks are unavailable. Please run pop_tesa_tepextract and pop_tesa_peakanalysis first.');
+        error('Peaks are unavailable for butterfly plots and single electrodes. Please plot ROI or GMFA data.');
     else
         if isempty(options.tepName)
             tempN = fieldnames(EEG.(options.tepType));

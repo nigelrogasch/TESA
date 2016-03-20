@@ -8,7 +8,7 @@
 %                       EEG.GMFA). If no peak is found in the defined window, 
 %                       the amplitude at the latency defined in peak is returned,
 %                       and a NaN is returned in latency. The analysis is run on 
-%                       all existing outputs from tesa_tepextract (e.g. ROIs), unless
+%                       all existing outputs from tesa_tepextract (e.g. ROIs or GMFA), unless
 %                       the user opts to run the analysis on one specific
 %                       ROI.
 % 
@@ -41,7 +41,7 @@
 %   'samples',int   - int is an integer defining the number of samples
 %                       either side of a peak that defines the peak.
 %                       Peaks are defined as data point which is
-%                       larger/smaller than +/- int data points (default = 3)
+%                       larger/smaller than +/- int data points (default = 5)
 %   'tepName','str' - 'str' is a name of a specific ROI to perform the
 %                       analysis on. If this is left blank, all ROI/GMFAs
 %                       defined by tesa_tepextract are analysed
@@ -59,7 +59,7 @@
 % See also:
 %   tesa_tepextract, tesa_peakoutput 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -83,7 +83,7 @@ if nargin < 5
 end
 
 %define defaults
-options = struct('method','largest','samples',3,'tepName',[]);
+options = struct('method','largest','samples',5,'tepName',[]);
 
 % read the acceptable names
 optionNames = fieldnames(options);

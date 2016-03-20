@@ -1,11 +1,11 @@
 % tesa_peakoutput() - returns the results for the peak analysis in a table
-%                       in the workspace. This can be calculated on either the
+%                       in the workspace and in a figure. This can be calculated on either the
 %                       peak latencies determined using 'tesa_peakanalysis',
 %                       or on fixed latencies provided by the user. Users can 
 %                       also opt to have the average amplitude incorporating data 
 %                       points either side of the peak instead of the absolute
 %                       peak amplitude. Either the average of the TEP curve or 
-%                       the area under the curve can be calculated. 
+%                       the area under the curve (GMFA only) can be calculated. 
 %                      
 % Usage:
 %   >>  output = tesa_peakoutput( EEG )
@@ -20,12 +20,12 @@
 %                       participant (using tesa_peakanalysis) or set latencies 
 %                       provided by the user in 'fixedPeak' (see below).
 %                       Default = 'individual'  
-%   'calcType', 'str' - 'average' | 'area'. Indicates whether to return the
-%                       average of the TEP time series or the area under
+%   'calcType', 'str' - 'amplitude' | 'area'. Indicates whether to return the
+%                       average amplitude of the TEP time series or the area under
 %                       the curve (area under curve only for GMFA analysis).
 %                       For area under curve, an analysis time window must 
 %                       also be entered using averageWin.
-%                       Default = 'average'
+%                       Default = 'amplitude'
 %   'tepName', 'str'  - string indicating which specific ROI or GMFA TEP to
 %                       give output for. If not indicated, output for all
 %                       TEP fields will be given.
@@ -35,10 +35,14 @@
 %                       If left empty, the absolute amplitude at the peak latency 
 %                       will be returned. A value is required for
 %                       calculating area under the curve for GMFA.
+%                       Example: [] - return value at peak; 5 - return
+%                       value averaged 5 ms either side of peak.
 %   'fixedPeak', [int]- required for 'winType' fixed. Integer or vector describing 
 %                       fixed latencies for calculating average or area under 
 %                       the curve.
 %                       Examples: [30], [30, 60, 100] etc.
+%   'tablePlot','str' - 'on' | 'off'. Plots a table with results from peak
+%                       analysis.
 %     
 % Outputs:
 %   output             - table with results from peak analysis
@@ -52,7 +56,7 @@
 % See also:
 %   tesa_tepextract, tesa_peakanalysis 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -76,7 +80,7 @@ if nargin < 1
 end
 
 %define defaults
-options = struct('winType','individual','calcType','average','tepName',[],'averageWin',0,'fixedPeak',[]);
+options = struct('winType','individual','calcType','amplitude','tepName',[],'averageWin',[],'fixedPeak',[],'tablePlot','on');
 
 % read the acceptable names
 optionNames = fieldnames(options);
@@ -107,13 +111,16 @@ if strcmp(options.calcType,'area') && ~isempty(options.tepName)
     end
 end
 
-if strcmp(options.calcType,'area') && options.averageWin == 0
-    error(' For area under curve, an analysis time window must also be entered using averageWin. For example ''averageWin'', 5.');
+if strcmp(options.calcType,'area') && isempty(options.averageWin)
+    error('For area under curve, an analysis time window must also be entered using averageWin. For example ''averageWin'', 5.');
 end
 
 % ANALYSIS BASED ON INDIVIDUAL PEAKS
 %Check that fields are present
 if strcmp(options.winType,'individual')
+    
+    cnames = {'Peak','Found?','Latency','Amplitude'};
+    
     if ~(isfield(EEG,'ROI') || isfield(EEG,'GMFA'))
         error('There is no ROI or GMFA analyses performed on this data. Please run pop_tesa_tepextract and then pop_tesa_peakanalysis.');
     end      
@@ -127,7 +134,7 @@ if strcmp(options.winType,'individual')
             roiNum{1,1} = options.tepName;
         end
         for a = 1:size(roiNum,1)
-            if strcmp(options.calcType,'average')
+            if strcmp(options.calcType,'amplitude')
                 if isfield(EEG.ROI,roiNum{a,1})
                     fieldNum = fieldnames(EEG.ROI.(roiNum{a,1}));
                     peakNum = fieldNum(logical(strncmpi(fieldNum,'P',1) + strncmpi(fieldNum,'N',1)));
@@ -143,7 +150,7 @@ if strcmp(options.winType,'individual')
                         output(num).peak = peakNum{b,1};
                         output(num).found = EEG.ROI.(roiNum{a,1}).(peakNum{b,1}).found;
                         output(num).lat = EEG.ROI.(roiNum{a,1}).(peakNum{b,1}).lat;
-                        if options.averageWin == 0
+                        if isempty(options.averageWin)
                             output(num).amp = EEG.ROI.(roiNum{a,1}).(peakNum{b,1}).amp;
                         else
                             if isnan(output(num).lat)
@@ -155,6 +162,12 @@ if strcmp(options.winType,'individual')
                             [val,tp2] = min(abs(EEG.ROI.(roiNum{a,1}).time-(findLat+options.averageWin)));
                             output(num).amp = mean(EEG.ROI.(roiNum{a,1}).tseries(:,tp1:tp2));
                         end
+                        rnames{1,num} = [output(num).analysis,' ',output(num).name];
+                        d{num,1} = output(num).peak;
+                        d{num,2} = output(num).found;
+                        d{num,3} = output(num).lat;
+                        d{num,4} = output(num).amp;
+                        
 %                     elseif strcmp(options.calcType,'area')
 %                         if options.averageWin == 0
 %                             output(num).area = trapz(1,EEG.ROI.(roiNum{a,1}).(peakNum{b,1}).amp);
@@ -196,8 +209,8 @@ if strcmp(options.winType,'individual')
                     output(num).peak = peakNum{b,1};
                     output(num).found = EEG.GMFA.(roiNum{a,1}).(peakNum{b,1}).found;
                     output(num).lat = EEG.GMFA.(roiNum{a,1}).(peakNum{b,1}).lat;
-                    if strcmp(options.calcType,'average')
-                        if options.averageWin == 0
+                    if strcmp(options.calcType,'amplitude')
+                        if isempty(options.averageWin)
                             output(num).amp = EEG.GMFA.(roiNum{a,1}).(peakNum{b,1}).amp;
                         else
                             if isnan(output(num).lat)
@@ -210,7 +223,7 @@ if strcmp(options.winType,'individual')
                             output(num).amp = mean(EEG.GMFA.(roiNum{a,1}).tseries(:,tp1:tp2));
                         end
                     elseif strcmp(options.calcType,'area')
-                        if options.averageWin == 0
+                        if isempty(options.averageWin)
                             output(num).area = trapz(1,EEG.GMFA.(roiNum{a,1}).(peakNum{b,1}).amp);
                         else
                             if isnan(output(num).lat)
@@ -222,8 +235,17 @@ if strcmp(options.winType,'individual')
                             [val,tp2] = min(abs(EEG.GMFA.(roiNum{a,1}).time-(findLat+options.averageWin)));
                             output(num).area = trapz(EEG.GMFA.(roiNum{a,1}).time(1,tp1:tp2),EEG.GMFA.(roiNum{a,1}).tseries(:,tp1:tp2));
                         end
+                        cnames{1,4}='area';
                     end
-
+                    rnames{1,num} = [output(num).analysis,' ',output(num).name];
+                    d{num,1} = output(num).peak;
+                    d{num,2} = output(num).found;
+                    d{num,3} = output(num).lat;
+                    if strcmp(options.calcType,'amplitude')
+                        d{num,4} = output(num).amp;
+                    elseif strcmp(options.calcType,'area') 
+                        d{num,4} = output(num).area;
+                    end
                 end    
             end
         end
@@ -232,6 +254,9 @@ end
     
 % ANALYSIS BASED ON FIXED PEAKS
 if strcmp(options.winType,'fixed')
+    
+    cnames = {'Peak','Amplitude'};
+    
     if ~(isfield(EEG,'ROI') || isfield(EEG,'GMFA'))
         error('There is no ROI or GMFA analyses performed on this data. Please run pop_tesa_tepextract.');
     end
@@ -247,7 +272,7 @@ if strcmp(options.winType,'fixed')
     output = [];
 
     if isfield(EEG, 'ROI')
-        if strcmp(options.calcType,'average')
+        if strcmp(options.calcType,'amplitude')
             if isempty(options.tepName)
                 roiNum = fieldnames(EEG.ROI);
             else
@@ -270,13 +295,17 @@ if strcmp(options.winType,'fixed')
         %                 output(num).found = EEG.ROI.(roiNum{a,1}).(peakNum{b,1}).found;
         %                 output(num).lat = EEG.ROI.(roiNum{a,1}).(peakNum{b,1}).lat;
                         [val,tp] = min(abs(EEG.ROI.(roiNum{a,1}).time-options.fixedPeak(1,b)));
-                        if options.averageWin == 0
+                        if isempty(options.averageWin)
                             output(num).amp = EEG.ROI.(roiNum{a,1}).tseries(1,tp);
                         else
                             [val,tp1] = min(abs(EEG.ROI.(roiNum{a,1}).time-(options.fixedPeak(1,b)-options.averageWin)));
                             [val,tp2] = min(abs(EEG.ROI.(roiNum{a,1}).time-(options.fixedPeak(1,b)+options.averageWin)));
                             output(num).amp = mean(EEG.ROI.(roiNum{a,1}).tseries(:,tp1:tp2));
                         end
+                        
+                        rnames{1,num} = [output(num).analysis,' ',output(num).name];
+                        d{num,1} = output(num).peak;
+                        d{num,2} = output(num).amp;
 %                     elseif strcmp(options.calcType,'area')
 %                         if options.averageWin == 0
 %                             output(num).area = trapz(1,EEG.ROI.(roiNum{a,1}).tseries(1,tp));
@@ -314,8 +343,8 @@ if strcmp(options.winType,'fixed')
     %                 output(num).found = EEG.GMFA.(roiNum{a,1}).(peakNum{b,1}).found;
     %                 output(num).lat = EEG.GMFA.(roiNum{a,1}).(peakNum{b,1}).lat;
                     [val,tp] = min(abs(EEG.GMFA.(roiNum{a,1}).time-options.fixedPeak(1,b)));
-                    if strcmp(options.calcType,'average')
-                        if options.averageWin == 0
+                    if strcmp(options.calcType,'amplitude')
+                        if isempty(options.averageWin)
                             output(num).amp = EEG.GMFA.(roiNum{a,1}).tseries(1,tp);
                         else
                             [val,tp1] = min(abs(EEG.GMFA.(roiNum{a,1}).time-(options.fixedPeak(1,b)-options.averageWin)));
@@ -323,14 +352,22 @@ if strcmp(options.winType,'fixed')
                             output(num).amp = mean(EEG.GMFA.(roiNum{a,1}).tseries(:,tp1:tp2));
                         end
                     elseif strcmp(options.calcType,'area')
-                        if options.averageWin == 0
+                        if isempty(options.averageWin)
                             output(num).area = trapz(1,EEG.GMFA.(roiNum{a,1}).tseries(1,tp));
                         else
                             [val,tp1] = min(abs(EEG.GMFA.(roiNum{a,1}).time-(options.fixedPeak(1,b)-options.averageWin)));
                             [val,tp2] = min(abs(EEG.GMFA.(roiNum{a,1}).time-(options.fixedPeak(1,b)+options.averageWin)));
                             output(num).area = trapz(EEG.GMFA.(roiNum{a,1}).time(1,tp1:tp2),EEG.GMFA.(roiNum{a,1}).tseries(:,tp1:tp2));
-                        end          
-                    end    
+                        end 
+                        cnames{1,2}='area';
+                    end
+                    rnames{1,num} = [output(num).analysis,' ',output(num).name];
+                    d{num,1} = output(num).peak;
+                    if strcmp(options.calcType,'amplitude')
+                        d{num,2} = output(num).amp;
+                    elseif strcmp(options.calcType,'area') 
+                        d{num,2} = output(num).area;
+                    end
                 end
             end
         end
@@ -339,10 +376,24 @@ end
     
 %Check that output contains something
 if isempty(output)
-    error('Peak analyses were not performed on this data. Error unknown.');
+    error('Peak analyses were not performed on this data. Please run tesa_tep_peakanalysis first, or used fixed latencies.');
+end
+
+if strcmpi(options.tablePlot,'on')
+    %Plot table with output
+    f = figure;
+    t = uitable(f,'Data',d,...
+                'ColumnName',cnames,... 
+                'RowName',rnames);
+    t.Position(3) = t.Extent(3);
+    t.Position(4) = t.Extent(4);
+    f.Position(3) = t.Extent(3)+40;
+    f.Position(4) = t.Extent(4)+40;
+    f.Name = 'Peak analysis output';
+    f.NumberTitle = 'off';
 end
 
 %Display message
-fprintf('Peak analysis results returned in workspace.\n');
+fprintf('Peak analysis results returned as ''output'' in workspace.\n');
 
 end

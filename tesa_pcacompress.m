@@ -20,7 +20,7 @@
 % 
 % Optional input pairs:
 %   'compVal',int       - int = number of dimensions to compress data
-%                       Default = 25.
+%                       Default = 30.
 %   'plot','str'        - 'on' | 'off'. Turns on/off plot summarising the
 %                       variance explained by principal components.
 %                       Default = 'on'
@@ -61,7 +61,7 @@ if nargin < 1
 end
 
 %define defaults
-options = struct('compVal',25,'plot','on');
+options = struct('compVal',30,'plot','on');
 
 % read the acceptable names
 optionNames = fieldnames(options);
@@ -85,8 +85,6 @@ end
 %Check compVal input is correct
 if ischar(options.compVal)
     error('''CompVal'' must be an integer, not a string. e.g. ''compVal'', 30.')
-elseif ~isinteger(options.compVal)
-    error('''CompVal'' must be an integer (i.e. a whole number).')
 end
     
 

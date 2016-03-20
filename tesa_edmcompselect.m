@@ -102,7 +102,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function [EEG, badComp] = tesa_edmcompselect( EEG , S, A ,varargin)
+function  badComp = tesa_edmcompselect( EEG , S, A ,varargin)
    
     if nargin < 1
         error('Not enough input arguments.');
@@ -134,7 +134,7 @@ function [EEG, badComp] = tesa_edmcompselect( EEG , S, A ,varargin)
     %Check comps input
     if ~isempty(options.comps)
         if size(S,1) < options.comps
-            error('The number of components to choose from (%d) is more than the number of independent components in the data (%d).',options.comps,size(S,1));
+            error('The number of components to choose from (%d) is more than the number of independent components in the data (%d).',options.comps,size(EEG.icaweights,1));
         end
     end
     
@@ -156,7 +156,7 @@ function [EEG, badComp] = tesa_edmcompselect( EEG , S, A ,varargin)
     elseif options.plotFreqX(1,1)<0
         error('Input for ''plotFreqX'' must be larger than 0.');
     end
-    
+       
     %Creates output storage for components
     badComp = [];
 
@@ -287,6 +287,7 @@ function [EEG, badComp] = tesa_edmcompselect( EEG , S, A ,varargin)
         %Plot topoplot
         subplot(2,2,2);
         topoplot(A(:,compNum),EEG.chanlocs,'electrodes','off');
+        colorbar
 
         %Plot time course matrix
         [val1,tp1] = min(abs(EEG.times-options.plotTimeX(1,1)));
@@ -306,7 +307,7 @@ function [EEG, badComp] = tesa_edmcompselect( EEG , S, A ,varargin)
 
         %Plot popup window
         popup = uicontrol('Style', 'popup',...
-            'String', {'Other','TMS-evoked muscle'},...
+            'String', {'Neural - other','TMS-evoked muscle'},...
             'Position', popPos,...
             'Value',compVal,...
             'fontSize',popFont); 

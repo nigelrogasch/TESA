@@ -8,7 +8,7 @@
 %                   menu. When satisfied, press enter (or any other button) to 
 %                   continue to the next component. Components are classified as one of the
 %                   following: neural, TMS-evoked muscle, eye, muscle,
-%                   electrode noise or sensory. If a component is selected
+%                   electrode noise, sensory or other. If a component is selected
 %                   as an artifact using a rule, it is plotted as red, if
 %                   neural it is plotted as blue. Following removal, a before and
 %                   after plot is generated and users can select whether to
@@ -162,7 +162,7 @@
 %                   (Useful for determining a suitable threshold).
 %                   Default: 'off'
 % 
-%   Note that a sensory category is also available in the dropdown menu.
+%   Note that a sensory and other category are also available in the dropdown menu.
 %   There are currently no specific rules suitable for accurately detecting
 %   these components and are therefore classified entirely at the user's discretion.
 % 
@@ -345,12 +345,14 @@ function EEG = tesa_compselect( EEG , varargin )
         EEG.(nameIn).muscle = [];
         EEG.(nameIn).electrodeNoise = [];
         EEG.(nameIn).sensory = [];
+        EEG.(nameIn).other = [];
 
         EEG.(nameIn).tmsMuscleVars = [];
         EEG.(nameIn).eyeVars = [];
         EEG.(nameIn).muscleVars = [];
         EEG.(nameIn).electrodeNoiseVars = [];
         EEG.(nameIn).sensoryVars= [];
+        EEG.(nameIn).otherVars = [];
 
         %Number of components to consider
         if isempty(options.comps)
@@ -402,7 +404,7 @@ function EEG = tesa_compselect( EEG , varargin )
             if options.tmsMuscleThresh < 0
                 error('Input for ''tmsMuscleThresh'' must be greater than 0.');
             elseif size(options.tmsMuscleWin,2)~=2
-                error('Input for ''tmsMusclesWin'' must be in the following format: [start,end]. e.g. [11,51].');
+                error('Input for ''tmsMusclesWin'' must be in the following format: [start,end]. e.g. [11,50].');
             elseif options.tmsMuscleWin(1,1) < EEG.times(1,1) || options.tmsMuscleWin(1,2) > EEG.times(1,end)
                 error('Input for ''tmsMuscleWin'' must be within the limits of the data [%d to %d].',EEG.times(1,1),EEG.times(1,end));
             end
@@ -561,6 +563,7 @@ function EEG = tesa_compselect( EEG , varargin )
         f = figure('KeyPressFcn',@(obj,evt) 0);
         f.Position = [xpos ypos sz(1) sz(2)];
         f.Name = 'Press enter when selection is made.';
+        f.NumberTitle = 'off';
 
         %Plot time course
         subplot(2,2,1);
@@ -592,7 +595,7 @@ function EEG = tesa_compselect( EEG , varargin )
 
         %Plot popup window
         popup = uicontrol('Style', 'popup',...
-            'String', {'Neural','TMS-evoked muscle','Eye','Muscle','Electrode noise','Sensory'},...
+            'String', {'Neural','TMS-evoked muscle','Eye','Muscle','Electrode noise','Sensory','Other'},...
             'Position', popPos,...
             'Value',compVal,...
             'fontSize',popFont); 
@@ -633,6 +636,9 @@ function EEG = tesa_compselect( EEG , varargin )
         elseif output == 6
             EEG.(nameIn).sensory(1,size(EEG.(nameIn).sensory,2)+1) = compNum;
             EEG.(nameIn).sensoryVars(1,size(EEG.(nameIn).sensoryVars,2)+1) = varsPerc(1,compNum);
+        elseif output == 7
+            EEG.(nameIn).other(1,size(EEG.(nameIn).other,2)+1) = compNum;
+            EEG.(nameIn).otherVars(1,size(EEG.(nameIn).otherVars,2)+1) = varsPerc(1,compNum);            
         end
 
         close;
@@ -642,11 +648,14 @@ function EEG = tesa_compselect( EEG , varargin )
     EEG1 = EEG;
 
     %Remove bad components
-    removeComps = [EEG.(nameIn).tmsMuscle, EEG.(nameIn).eye, EEG.(nameIn).muscle, EEG.(nameIn).electrodeNoise, EEG.(nameIn).sensory];
+    removeComps = [EEG.(nameIn).tmsMuscle, EEG.(nameIn).eye, EEG.(nameIn).muscle, EEG.(nameIn).electrodeNoise, EEG.(nameIn).sensory, EEG.(nameIn).other];
     EEG = pop_subcomp( EEG,removeComps, 0);
 
     %Plot check
-    f1 = figure;
+    f1 = figure('KeyPressFcn',@(obj,evt) 0);
+    f1.Name = 'Press enter when ready to continue.';
+    f1.NumberTitle = 'off';
+    
     subplot(1,2,1)
     plot(EEG.times,pre,'b'); grid on; hold on;
     plot([0 0], get(gca,'ylim'),'r--');
@@ -663,9 +672,12 @@ function EEG = tesa_compselect( EEG , varargin )
     xlabel('Time (ms)');
     ylabel('Amplitude (\muV)');
     title('After correction','fontweight','bold');
+    
+    waitfor(gcf,'CurrentCharacter');
+    curChar=uint8(get(gcf,'CurrentCharacter'));
 
     %Check if happy to continue
-    ButtonName = questdlg('Are you happy with component removal?', 'Verify component removal', 'No-Redo', 'Yes', 'Cancel', 'Yes');
+    ButtonName = questdlg('Are you satisfied with component removal?', 'Verify component removal', 'No-Redo', 'Yes', 'Cancel', 'Yes');
     switch ButtonName,
         case 'No-Redo',
             redo = true; EEG = EEG1;

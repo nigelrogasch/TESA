@@ -65,7 +65,7 @@
 % See also:
 %   tesa_peakanalysis, tesa_peakoutput 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -130,8 +130,13 @@ if strcmp(type,'ROI')
         if ~isfield(EEG,'ROI')
             options.tepName = 'R1';
         else
-            options.tepName = ['R',num2str(size(EEG.ROI,2)+1)];
+            options.tepName = ['R',num2str(size(fieldnames(EEG.ROI),1)+1)];
         end
+    end
+    
+    %Replace spaces with underscore
+    if ~isempty(options.tepName)
+        options.tepName = strrep(options.tepName,' ','_')
     end
 
     %Check if ROI name already exists
@@ -272,10 +277,15 @@ if strcmp(type,'GMFA')
         if ~isfield(EEG,'GMFA')
             options.tepName = 'R1';
         else
-            options.tepName = ['R',num2str(size(EEG.GMFA,2)+1)];
+            options.tepName = ['R',num2str(size(fieldnames(EEG.GMFA),1)+1)];
         end
     end
 
+    %Replace spaces with underscore
+    if ~isempty(options.tepName)
+        options.tepName = strrep(options.tepName,' ','_')
+    end
+    
     %Check if GMFA name already exists
     if isfield(EEG,'GMFA')
         if isfield(EEG.GMFA,options.tepName)
@@ -325,11 +335,11 @@ if strcmp(type,'GMFA')
         %Perform GMFA analysis on file
 
         %Calculate average over trials
-        avgTrials=nanmean(EEG1.data,3); %Calculate average over trials
+        avgTrials=nanmean(EEG.data,3); %Calculate average over trials
+        avgTrials1=nanmean(EEG1.data,3); %Calculate average over trials
 
         %Shift new time series to align with pulse to be subtracted
         ISIS = (EEG1.srate/1000)*options.ISI; %convert ISI to samples
-        avgTrials1 = avgTrials;
         avgTrials1(:,1:ISIS) = [];
         temp = zeros(size(avgTrials1,1),ISIS);
         sub = [avgTrials1, temp];

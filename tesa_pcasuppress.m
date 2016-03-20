@@ -89,13 +89,13 @@ titleNames = {'Raw data';'Remove 1 PC';'Remove 2 PCs';'Remove 3 PCs';'Remove 4 P
 %Plot the results of removing different componets
 figure('Name','Impact of removing PCs on signal','NumberTitle','off'); 
 subplot(2,3,1);
-plot(EEG.times,mean(EEG.data,3));grid
+plot(EEG.times,mean(EEG.data,3),'b');grid
 set(gca,'Xlim',[-100 500]);ylabel('Amplitude (µV)'); xlabel('Time (ms)');
 title(titleNames{1,1},'FontWeight','bold');
 
 for a = 1:5;
     subplot(2,3,a+1);
-    plot(EEG.times,mean(outData(a).data,3));grid
+    plot(EEG.times,mean(outData(a).data,3),'b');grid
     set(gca,'Xlim',[-100 500]);ylabel('Amplitude (µV)'); xlabel('Time (ms)');
     title(titleNames{a+1,1},'FontWeight','bold');
 end
@@ -116,7 +116,9 @@ numPC = str2num(result{1,1});
 EEG.pcasuppression = numPC;
 
 %Replace data
-if numPC > 0 && numPC <= 5
+if isempty(numPC)
+    numPC = 0;
+elseif numPC > 0 && numPC <= 5
     EEG.data = outData(numPC).data;
 elseif numPC > 5
     error('Please enter a number between 0-5');
