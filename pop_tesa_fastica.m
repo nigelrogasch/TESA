@@ -1,5 +1,5 @@
 % pop_tesa_fastica()    - runs FastICA on data using some common settings applied
-%                   for TMS-EEG data analysis using EEGLAB pop_runica function. 
+%                   for TMS-EEG data analysis. tesa_fastica uses EEGLAB pop_runica function. 
 %                   See the publications listed below for further details. 
 %                   A stabilization option is also included which can help 
 %                   if data are not converging. 
@@ -93,6 +93,7 @@ if nargin < 2
               {'style', 'popupmenu', 'string', 'off|on', 'tag', 'interp' }};
              
     result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Run FastICA -- pop_tesa_fastica()', 'helpcom', 'pophelp(''pop_tesa_fastica'')');
+    if isempty(result), return; end;
     
     %Extract data 
     if result{1,1} == 1

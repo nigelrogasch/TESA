@@ -75,6 +75,7 @@ if nargin < 2
               {'style', 'popupmenu', 'string', 'band-pass|band-stop', 'tag', 'interp' }};
              
     result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Filter data -- pop_tesa_filtbutter()', 'helpcom', 'pophelp(''pop_tesa_filtbutter'')');
+    if isempty(result), return; end;
     
     %Extract data 
     high = str2num(result{1,1});

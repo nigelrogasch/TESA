@@ -71,6 +71,7 @@ if nargin < 2
               {'style', 'edit', 'string', '20'}};
              
     result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Interpolate removed data -- pop_tesa_interpdata()', 'helpcom', 'pophelp(''pop_tesa_interpdata'')');
+    if isempty(result), return; end;
     
     %extract interpolation type
     if result{1,1} == 1

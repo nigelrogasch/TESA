@@ -113,6 +113,9 @@ if nargin < 2
     
     % Create trigger list
     for x = 1:size(EEG.event,2)
+        if ~ischar(EEG.event(x).type)
+            EEG.event(x).type = num2str(EEG.event(x).type);
+        end
         trigAll{x,1} = EEG.event(x).type;
     end
     trigUnique = unique(trigAll);
@@ -149,7 +152,8 @@ if nargin < 2
               {'style', 'edit', 'string', ''}};
              
     result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Fix trigger position -- pop_tesa_fixtrigger()', 'helpcom', 'pophelp(''pop_tesa_fixtrigger'')');
-       
+    if isempty(result), return; end;
+    
     %Extract data for single pulse artifact find
     newEpoch = str2num(result{1,1});
     elec = chanAll{result{1,2},1};

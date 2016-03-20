@@ -155,6 +155,7 @@ if nargin < 2
               {'style', 'edit', 'string', ''}};
              
     result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Find TMS pulses -- pop_tesa_findpulse()', 'helpcom', 'pophelp(''pop_tesa_findpulse'')');
+    if isempty(result), return; end;
     
     %Check that both paired and repetitive are not on
     if result{1,6}==1 && result{1,9} == 1

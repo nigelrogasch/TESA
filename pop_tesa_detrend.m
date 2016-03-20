@@ -1,26 +1,32 @@
-% tesa_detrend() - detrends the data by fiting and subtracting either a linear, exponential
-%                   or double exponential function to each channel and
-%                   trial. Note that the Curve Fitting Toolbox is required
+% pop_tesa_detrend() - detrends the data by fiting and subtracting a function from
+%                   each channel. Either a linear (fitted and subtratcted from 
+%                   each trial), exponential or double exponential function 
+%                   (fitted to average and subtracted from each trial) can be fitted. 
+%                   Note that the Curve Fitting Toolbox is required
 %                   to run either the exponential fit or the double
 %                   exponential fit.
-%
+% 
 % Usage:
-%   >>  EEG = tesa_detrend( EEG );
-%   >>  EEG = tesa_detrend( EEG, detrend, timeWin );
+%   >>  EEG = pop_tesa_detrend( EEG,); %pop up window
+%   >>  EEG = pop_tesa_detrend( EEG, detrend, timeWin );
 %
-% Inputs:
+% Inputs (required):
 %   EEG             - EEGLAB EEG structure
-%   detrend         - string with type of detrend to perform; either
-%                   'linear', 'exponential' or 'double'
-%   tineWin         - vector with time range for detrending [t1,t2]
+%   detrend         - string with type of detrend to perform; 'linear'
+%   timeWin         - vector with time range for detrending [t1,t2]
 %    
 % Outputs:
 %   EEG             - EEGLAB EEG structure
-%
+% 
+% Examples:
+%   EEG = pop_tesa_detrend( EEG, 'linear', [11,500]);
+%   EEG = pop_tesa_detrend( EEG, 'exponential', [11,500]);
+%   EEG = pop_tesa_detrend( EEG, 'double', [11,500]);
+% 
 % See also:
-%   SAMPLE, EEGLAB 
+%   pop_tesa_fastica, pop_tesa_edm, pop_tesa_pcasupress 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
@@ -50,18 +56,18 @@ end
 % -------------
 if nargin < 2
    
-    geometry = {[1 1] 1 1 [1 0.5] [1 0.5]};
+    geometry = {1 [1 1] 1 1 [1 1]};
     
-    uilist = {{'style', 'text', 'string', ['Type of detrend']} ...
+    uilist = {{'style', 'text', 'string', 'Detrend data','fontweight','bold'} ...
+              {'style', 'text', 'string', 'Type of detrend'} ...
               {'style', 'popupmenu', 'string', 'linear|exponential|double' 'tag' 'interp' } ...
               {}...
               {'style', 'text', 'string', 'Time range for detrend','fontweight','bold'} ...
-              {'style', 'text', 'string', 'Start time (in ms)'} ...
-              {'style', 'edit', 'string', ''} ...
-              {'style', 'text', 'string', 'End time (in ms)'} ...
-              {'style', 'edit', 'string', ''}};
+              {'style', 'text', 'string', 'Start, end (ms)'} ...
+              {'style', 'edit', 'string', '11, 500'}};
              
-    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Detrend data -- pop_tesa_detrend()', 'helpcom', 'pophelp(''tesa_detrend'')');
+    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Detrend data -- pop_tesa_detrend()', 'helpcom', 'pophelp(''pop_tesa_detrend'')');
+    if isempty(result), return; end;
     
     %extract detrend type
     if result{1,1} == 1
@@ -72,11 +78,7 @@ if nargin < 2
         detrend = 'double'; 
     end
     
-    if strcmp(result(1,2),'') || strcmp(result(1,3),'')
-        error('Please enter the time range for detrend');  
-    else
-        timeWin = cellfun(@str2num,(result(:,2:3)));
-    end 
+    timeWin = str2num(result{1,2});
     
 end
 

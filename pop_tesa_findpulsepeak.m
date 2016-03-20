@@ -20,8 +20,8 @@
 %   elec            - string with electrode to use for finding artifact
 % 
 % Optional input pairs:
-%   'dtrend','str'  'poly'|'linear'|'off'. Defines the type of detrend used
-%                   to centre the data.
+%   'dtrnd','str'  'poly'|'gradient'|'median|'linear'|'none'. Defines the type of detrend used
+%                   to centre the data, to generate an analytic signal.
 %                   default = poly
 %   'thrshtype','str'/int - 'dynamic'|'median'|value. Defines the type of
 %                   threshold used to determine peaks. Dynamic sets threshold 
@@ -80,7 +80,7 @@
 % nigel.rogasch@monash.edu
 % 
 % Authors:
-% Caley Sullivan, Monash University, calley.sullivan@monash.edu
+% Caley Sullivan, Monash University, caley.sullivan@monash.edu
 % 
 % Based on functions developed by Daniel Wagenaar 
 %                                  http://www.its.caltech.edu/~daw/software.html
@@ -99,7 +99,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- function [EEG com] = pop_tesa_findpulsepeak( EEG, elec, varargin )
+ function [EEG, com] = pop_tesa_findpulsepeak( EEG, elec, varargin )
 
 com = '';          
 
@@ -122,13 +122,16 @@ if nargin < 2
         chan = chanAll{1,1};
     end
     
-    geometry = {1 [1 0.3] [1 0.3] [1 0.3] [1 0.3] [1 0.3] [1 0.3] 1 [1 0.3] [1 0.3] 1 [1 0.3] 1 1 1 [1 0.3] [1 0.3] [1 0.3]};
+    geometry = {1 [1 0.3] [1 0.3] [1 0.3] [1 0.3] [1 0.3] [1 0.3] [1 0.3] 1 [1 0.3] [1 0.3] 1 [1 0.3] 1 1 1 [1 0.3] [1 0.3] [1 0.3]};
 
     uilist = {{'style', 'text', 'string', 'Find TMS pulses','fontweight','bold'} ...
-              {'style', 'text', 'string', 'Electrode for finding artifact'} ...
-              {'style', 'edit', 'string', chan} ...
+              { 'Style', 'text', 'string', 'Electrode for finding artifact' }, ...
+         { 'Style', 'edit', 'string', chan, 'tag', 'chans' }, ...
+         {},  ...
+         { 'style' 'pushbutton' 'string'  'select', 'enable' fastif(isempty(EEG.chanlocs), 'off', 'on') ...
+           'callback' 'tmpchanlocs = EEG(1).chanlocs; [tmp tmpval] = tesa_chansel({tmpchanlocs.labels}, ''withindex'', ''on'', ''selectionmode'',''single''); set(findobj(gcbf, ''tag'', ''chans''), ''string'',tmpval); clear tmp tmpchanlocs tmpval' }, ...
               {'style', 'text', 'string', 'Type of detrend'} ...
-              {'style', 'popupmenu', 'string', 'poly|linear|off' 'tag' 'detrend'}...
+              {'style', 'popupmenu', 'string', 'poly|gradient|median|none' 'tag' 'detrend'}...
               {'style', 'text', 'string', 'Type of thresholding'} ...
               {'style', 'popupmenu', 'string', 'dynamic|median|manual' 'tag' 'thresh'}...
               {'style', 'text', 'string', 'Peak to define artifact'} ...
@@ -156,6 +159,7 @@ if nargin < 2
               {'style', 'edit', 'string', ''}};
              
     result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Find TMS pulses -- pop_tesa_findpulsepeak()', 'helpcom', 'pophelp(''tesa_findpulsepeak'')');
+    if isempty(result), return; end;
     
     %Check that both paired and repetitive are not on
     if result{1,7} == 1 && result{1,10} == 1
@@ -166,11 +170,15 @@ if nargin < 2
     elec = result{1,1};
     
     if result{1,2} == 1;
-        dtrend = 'poly';
+        dtrnd = 'poly';
     elseif result{1,2} == 2;
-        dtrend = 'linear';
+        dtrnd = 'gradient';
     elseif result{1,3} == 3;
-        dtrend = 'off';
+        dtrnd = 'median';
+    elseif result{1,4} == 4;
+        dtrnd = 'linear';
+    elseif result{1,5} == 5;
+        dtrnd = 'none';
     end
     
     if result{1,3} == 1;
@@ -187,15 +195,15 @@ if nargin < 2
     
     if result{1,4} == 1
         wpeaks = 'pos';
-    elseif results{1,4} == 2
+    elseif result{1,4} == 2
         wpeaks = 'neg';
-    elseif results {1,4} == 3
+    elseif result {1,4} == 3
         wpeaks = 'gui';
     end
     
     if result{1,5} == 1
         plots = 'on';
-    elseif results{1,5} == 0
+    elseif result{1,5} == 0
         plots = 'off';
     end
         
@@ -225,53 +233,53 @@ if nargin < 2
     end
 
 end
-
+    chan=mat2str(elec);
 %Run script from input
 if nargin == 2;
     EEG = tesa_findpulsepeak(EEG,elec);
-    com = sprintf('%s = pop_tesa_findpulsepeak( %s, %s );', inputname(1), inputname(1), elec );
+    com = sprintf('%s = tesa_findpulsepeak( %s, %s );', inputname(1), inputname(1),chan);
 elseif nargin > 2
     EEG = tesa_findpulsepeak(EEG,elec,varargin{:});
-    com = sprintf('%s = pop_tesa_findpulsepeak( %s, %s, %s );', inputname(1), inputname(1), elec, vararg2str(varargin) );
+    com = sprintf('%s = tesa_findpulsepeak( %s, %s, %s );', inputname(1), inputname(1),chan, vararg2str(varargin) );
 end
     
 
 %find artifact and return the string command using pop window info
 if result{1,7} == 0 && result{1,10} == 0
-    EEG = tesa_findpulsepeak( EEG, elec, 'dtrend', dtrend, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel );
-    if isnum(thrshtype)
+    EEG = tesa_findpulsepeak( EEG, elec, 'dtrnd', dtrnd, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel );
+    if ischar(thrshtype)
         thrshtype1 = mat2str(thrshtype);
     else
         thrshtype1 = thrshtype;
     end
-    com = sprintf('%s = pop_tesa_findpulsepeak( %s, %s, ''dtrnd'', %s, ''thrshtype'', %s, ''wpeaks'', %s, ''plots'', %s, ''tmsLabel'', %s);', inputname(1), inputname(1), elec, dtrnd, thrshtype1, wpeaks, plots, tmsLabel);
+    com = sprintf('%s = tesa_findpulsepeak( %s, %s, ''dtrnd'', %s, ''thrshtype'', %s, ''wpeaks'', %s, ''plots'', %s, ''tmsLabel'', %s);', inputname(1), inputname(1), chan, dtrnd, thrshtype1, wpeaks, plots, tmsLabel);
 elseif result{1,7} == 1
     if strcmp(pairLabel{1,1},'')
-        EEG = tesa_findpulsepeak( EEG, elec, 'dtrend', dtrend, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'paired', paired, 'ISI', ISI );
-        if isnum(thrshtype)
+        EEG = tesa_findpulsepeak( EEG, elec, 'dtrnd', dtrnd, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'paired', paired, 'ISI', ISI );
+        if ischar(thrshtype)
             thrshtype1 = mat2str(thrshtype);
         else
             thrshtype1 = thrshtype;
         end
-        com = sprintf('%s = pop_tesa_findpulsepeak( %s, %s, ''dtrnd'', %s, ''thrshtype'', %s, ''wpeaks'', %s, ''plots'', %s, ''tmsLabel'', %s, ''paired'', %s, ''ISI'', %s);', inputname(1), inputname(1), elec, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, paired, mat2str(ISI));
+        com = sprintf('%s = tesa_findpulsepeak( %s, %s, ''dtrnd'', %s, ''thrshtype'', %s, ''wpeaks'', %s, ''plots'', %s, ''tmsLabel'', %s, ''paired'', %s, ''ISI'', %s);', inputname(1), inputname(1), chan, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, paired, mat2str(ISI));
 
     else
-        EEG = tesa_findpulsepeak( EEG, elec, 'dtrend', dtrend, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'paired', paired, 'ISI', ISI, 'pairLabel', pairLabel);
-        if isnum(thrshtype)
+        EEG = tesa_findpulsepeak( EEG, elec, 'dtrnd', dtrnd, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'paired', paired, 'ISI', ISI, 'pairLabel', pairLabel);
+        if ischar(thrshtype)
             thrshtype1 = mat2str(thrshtype);
         else
             thrshtype1 = thrshtype;
         end
-        com = sprintf('%s = pop_tesa_findpulsepeak( %s, %s, ''dtrnd'', %s, ''thrshtype'', %s, ''wpeaks'', %s, ''plots'', %s, ''tmsLabel'', %s, ''paired'', %s, ''ISI'', %s, ''pairLabel'', {%s});', inputname(1), inputname(1), elec, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, paired, mat2str(ISI), result{1,9});
+        com = sprintf('%s = tesa_findpulsepeak( %s, %s, ''dtrnd'', %s, ''thrshtype'', %s, ''wpeaks'', %s, ''plots'', %s, ''tmsLabel'', %s, ''paired'', %s, ''ISI'', %s, ''pairLabel'', {%s});', inputname(1), inputname(1), chan, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, paired, mat2str(ISI), result{1,9});
     end
 elseif result{1,10} == 1
-    EEG = tesa_findpulsepeak( EEG, elec, 'dtrend', dtrend, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'ITI', ITI, 'pulseNum', pulseNum);
-    if isnum(thrshtype)
+    EEG = tesa_findpulsepeak( EEG, elec, 'dtrnd', dtrnd, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'ITI', ITI, 'pulseNum', pulseNum);
+    if ischar(thrshtype)
         thrshtype1 = mat2str(thrshtype);
     else
         thrshtype1 = thrshtype;
     end
-    com = sprintf('%s = pop_tesa_findpulsepeak( %s, %s, ''dtrnd'', %s, ''thrshtype'', %s, ''wpeaks'', %s, ''plots'', %s, ''tmsLabel'', %s, ''ITI'', %s, ''pulseNum'', %s);', inputname(1), inputname(1), elec, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, mat2str(ITI), mat2str(pulseNum));
+    com = sprintf('%s = tesa_findpulsepeak( %s, %s, ''dtrnd'', %s, ''thrshtype'', %s, ''wpeaks'', %s, ''plots'', %s, ''tmsLabel'', %s, ''ITI'', %s, ''pulseNum'', %s);', inputname(1), inputname(1), chan, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, mat2str(ITI), mat2str(pulseNum));
 end
 
 end
