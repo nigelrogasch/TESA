@@ -197,7 +197,7 @@ EEG = pop_tesa_peakanalysis(EEG,'GMFA','positive',[20,40,60,80,120],[15,25;35,45
 %%
 % ##### OUTPUT ANALYSIS RESULTS TO WORKSPACE (TESA) #####
 
-ouptut = pop_tesa_peakoutput(EEG,'averageWin',5);
+output = pop_tesa_peakoutput(EEG,'averageWin',5);
 
 %%
 
