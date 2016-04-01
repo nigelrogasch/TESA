@@ -12,7 +12,8 @@
 %
 % Inputs (required):
 %   EEG             - EEGLAB EEG structure
-%   detrend         - string with type of detrend to perform; 'linear'
+%   detrend         - string with type of detrend to perform; 'linear' |
+%                   'exponential' | 'double'
 %   timeWin         - vector with time range for detrending [t1,t2]
 %    
 % Outputs:

@@ -1,6 +1,6 @@
 % tesa_compselect() - sorts components following ICA by time course
 %                   variance, applies a series of rules (determined by the
-%                   user) to classify components as artefacts or neural
+%                   user) to classify components as artifacts or neural
 %                   activity, presents the components one-by-one for manual
 %                   clarification and then removes components selected as
 %                   artifacts from the data. During the clarification step,
@@ -20,7 +20,7 @@
 %                   Users are encouraged to report the settings used with
 %                   this function in any publications.
 % 
-%                   Note that the component selection rules are intedended
+%                   Note that the component selection rules are intended
 %                   to work as a guide only, and each component must be
 %                   manually checked and re-classified if necessary. The rule 
 %                   thresholds can be adapted by the user and may differ 
@@ -74,7 +74,7 @@
 %                   Default: 8
 %   'tmsMuscleWin',[start,end] - a vector describing the target window for
 %                   TMS-evoked muscle activity (in ms).
-%                   Default: [11,50]
+%                   Default: [11,30]
 %   'tmsMuscleFeedback','str' - 'on' | 'off'. String turning on feedback
 %                   of TMS-evoked muscle threshold value for each component
 %                   in the command window.
@@ -236,7 +236,7 @@ function EEG = tesa_compselect( EEG , varargin )
         options.tmsMuscleThresh = 8;
     end
     if isempty(options.tmsMuscleWin)
-        options.tmsMuscleWin = [11,50];
+        options.tmsMuscleWin = [11,30];
     end
     if isempty(options.blinkThresh)
         options.blinkThresh = 2.5;
@@ -392,7 +392,7 @@ function EEG = tesa_compselect( EEG , varargin )
         end;
 
         %##########
-        %Checks which components fit profile of artefact
+        %Checks which components fit profile of artifact
 
         %Calculates the zscores across electrodes for each component
         tempCompZ = zscore(EEG.icawinv(:,compNum));
@@ -501,10 +501,10 @@ function EEG = tesa_compselect( EEG , varargin )
         %Electrode noise
         elecNoise = abs(tempCompZ) > abs(options.elecNoiseThresh);
         if strcmpi(options.elecNoiseFeedback,'on')
-            fprintf('Comp. %d maximum electrode z score is %s.\n', compNum,num2str(abs(round(max(tempCompZ),2))));
+            fprintf('Comp. %d maximum electrode z score is %s.\n', compNum,num2str(max(abs(round(tempCompZ,2)))));
         end
         
-        %Select if component is artefact
+        %Select if component is artifact
         if strcmpi(options.tmsMuscle,'on') && tmsMuscleRatio >= options.tmsMuscleThresh
             compVal = 2;
         elseif strcmpi(options.blink,'on') && abs(blinkRatio) >= options.blinkThresh
@@ -524,7 +524,7 @@ function EEG = tesa_compselect( EEG , varargin )
 
         %Decide colour of figure
         if compVal ~= 1
-            colour = 'r'; % if artefact
+            colour = 'r'; % if artifact
         else
             colour = 'b'; % if not artefac
         end
@@ -576,6 +576,7 @@ function EEG = tesa_compselect( EEG , varargin )
         %Plot topoplot
         subplot(2,2,2);
         topoplot(EEG.icawinv(:,compNum),EEG.chanlocs,'electrodes','off');
+        colorbar;
 
         %Plot time course matrix
         [val1,tp1] = min(abs(EEG.times-options.plotTimeX(1,1)));

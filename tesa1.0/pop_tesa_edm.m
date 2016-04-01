@@ -1,5 +1,5 @@
 % pop_tesa_edm()    - find artefactual components automatically by using the 
-%                 EDM algorithm as advocated in 
+%                 enhanced deflation method (EDM) algorithm as advocated in 
 %                 the following paper:
 %
 %                 Korhonen, Hernandez-Pavon et al (2011) Removal of 
@@ -9,7 +9,7 @@
 % 
 %                 The function uses the same algorithmn as tesa_compselect
 %                 to automatically detect components representing the
-%                 TMS-evoked muscle artefact. Settings for this detection
+%                 TMS-evoked muscle artifact. Settings for this detection
 %                 can be manually altered by the user.
 % Usage:
 %   >>  EEG = pop_tesa_edm( EEG ); % pop up window
@@ -47,7 +47,7 @@
 %                       Default: 8
 %   'tmsMuscleWin',[start,end] - a vector describing the target window for
 %                       TMS-evoked muscle activity (in ms).
-%                       Default: [11,50]
+%                       Default: [11,30]
 %   'tmsMuscleFeedback','str' - 'on' | 'off'. String turning on feedback
 %                       of TMS-evoked muscle threshold value for each component
 %                       in the command window.
@@ -111,7 +111,7 @@ if nargin < 3
               {'style', 'text', 'string', 'Threshold for detection'} ...
               {'style', 'edit', 'string', '8'} ...
               {'style', 'text', 'string', 'Target times for artefact (ms): start, end'} ...              
-              {'style', 'edit', 'string', '11, 50'} ...
+              {'style', 'edit', 'string', '11, 30'} ...
               {'style', 'text', 'string', 'Threshold feedback'} ...
               {'Style', 'checkbox', 'string' 'on/off' 'value' 0 'tag' 'pair' } ...
               {}...

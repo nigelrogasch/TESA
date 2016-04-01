@@ -1,6 +1,6 @@
-% pop_tesa_fixtrigger() - finds TMS pulses by detecting the large TMS artifacts
+% pop_tesa_fixevent() - finds TMS pulses by detecting the large TMS artifacts
 %                   present in already epoched data. This script is
-%                   designed for instances when the recoreded triggers do
+%                   designed for instances when the recorded events do
 %                   not correspond with when the TMS pulse was given.
 %                   The script works by extracting a
 %                   single channel and finding the time points in which the 
@@ -11,8 +11,8 @@
 %                   that the initial epochs you use are larger than the
 %                   final epoch size you desire. If the initial epoch size is
 %                   too small, the new epoch window will be out of range 
-%                   with the new triggers. E.g. inital epoch is -100 to 100
-%                   and the trigger is shifted 10 ms so the new 0 now sits
+%                   with the new events. E.g. inital epoch is -100 to 100
+%                   and the event is shifted 10 ms so the new 0 now sits
 %                   at 10 ms. Re-epoching the data to -100 to 100 won't
 %                   work as the new range is effectively -90 to 110. In this case, 
 %                   run the initial epoch at -120 to 120 and the epoch can now
@@ -20,9 +20,9 @@
 %                   
 %
 % Usage:
-%   >>  EEG = pop_tesa_fixtrigger( EEG ); % pop up window
-%   >>  EEG = pop_tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel );
-%   >>  EEG = pop_tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel, 'key1', value1... );
+%   >>  EEG = pop_tesa_fixevent( EEG ); % pop up window
+%   >>  EEG = pop_tesa_fixevent( EEG, elec, newEpoch, tmsLabel );
+%   >>  EEG = pop_tesa_fixevent( EEG, elec, newEpoch, tmsLabel, 'key1', value1... );
 %
 % Inputs:
 %   EEG             - EEGLAB EEG structure
@@ -30,7 +30,7 @@
 %   newEpoch        - [required] vector with start and end time of new epoch in
 %                   seconds (following pop_epoch convention). 
 %                   Example: [-1,1] %For -1 s to 1s epoch
-%   tmsLabel        - [required] string indicating the trigger that requires 
+%   tmsLabel        - [required] string indicating the event that requires 
 %                   correcting (e.g. 'TMS')  
 %                   
 % Optional input pairs:
@@ -54,9 +54,9 @@
 %   EEG             - EEGLAB EEG structure
 %
 %   % Examples
-%   EEG = pop_tesa_fixtrigger( EEG, 'Cz', [-0.8,0.8], 'TMS' ); %default use
-%   EEG = pop_tesa_fixtrigger( EEG, 'Fz', [-0.7,0.7], 'TMS', 'refract', 4, 'rate', 2e5 ); %user defined input
-%   EEG = pop_tesa_fixtrigger( EEG, 'Cz', [-0.8,0.8], 'LICI', 'paired', 'yes', 'ISI', 100 ); %paired pulse use
+%   EEG = pop_tesa_fixevent( EEG, 'Cz', [-0.8,0.8], 'TMS' ); %default use
+%   EEG = pop_tesa_fixevent( EEG, 'Fz', [-0.7,0.7], 'TMS', 'refract', 4, 'rate', 2e5 ); %user defined input
+%   EEG = pop_tesa_fixevent( EEG, 'Cz', [-0.8,0.8], 'LICI', 'paired', 'yes', 'ISI', 100 ); %paired pulse use
 %
 % See also:
 %   pop_tesa_findpulse, pop_tesa_findpulsepeak
@@ -78,7 +78,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- function [EEG com] = pop_tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel, varargin )
+ function [EEG com] = pop_tesa_fixevent( EEG, elec, newEpoch, tmsLabel, varargin )
 
 com = '';          
 
@@ -111,7 +111,7 @@ if nargin < 2
     end
     chanIn = [chanOr{:}];
     
-    % Create trigger list
+    % Create event list
     for x = 1:size(EEG.event,2)
         if ~ischar(EEG.event(x).type)
             EEG.event(x).type = num2str(EEG.event(x).type);
@@ -125,7 +125,7 @@ if nargin < 2
     end
     trigIn = [trigOr{:}];
     
-    % Find default trigger ('TMS')
+    % Find default event ('TMS')
     if sum(strcmpi('TMS',trigUnique)) > 0
         trigVal = find(strcmpi('TMS',trigUnique));
     else
@@ -134,7 +134,7 @@ if nargin < 2
     
     geometry = {1 [1 0.3] [1 0.3] [1 0.3] [1 0.3] [1 0.3] 1 [1 0.3] [1 0.3]};
 
-    uilist = {{'style', 'text', 'string', 'Fix trigger position','fontweight','bold'} ...
+    uilist = {{'style', 'text', 'string', 'Fix event position','fontweight','bold'} ...
               {'style', 'text', 'string', 'New epoch length (secs) [required]'} ...
               {'style', 'edit', 'string', '-1, 1'} ...
               {'style', 'text', 'string', 'Electrode for finding artifact'} ...
@@ -143,7 +143,7 @@ if nargin < 2
               {'style', 'edit', 'string', '3'}...
               {'style', 'text', 'string', 'Rate of change of TMS artifact - used to find artifact (uV/ms)'} ...
               {'style', 'edit', 'string', '1e4'}...
-              {'style', 'text', 'string', 'Trigger to be adjusted.'} ...
+              {'style', 'text', 'string', 'Event to be adjusted.'} ...
               {'style', 'popupmenu', 'string', trigIn, 'tag', 'interp', 'Value', trigVal } ...
               {} ...
               {'style', 'text', 'string', 'Paired pulse TMS','fontweight','bold'} ...
@@ -151,7 +151,7 @@ if nargin < 2
               {'style', 'text', 'string', 'Interstimulus interval (ms) [required]'} ...
               {'style', 'edit', 'string', ''}};
              
-    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Fix trigger position -- pop_tesa_fixtrigger()', 'helpcom', 'pophelp(''pop_tesa_fixtrigger'')');
+    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Fix event position -- pop_tesa_fixevent()', 'helpcom', 'pophelp(''pop_tesa_fixevent'')');
     if isempty(result), return; end;
     
     %Extract data for single pulse artifact find
@@ -182,21 +182,21 @@ end
 
 %Run script from input
 if nargin == 4;
-    EEG = tesa_fixtrigger(EEG,elec,newEpoch,tmsLabel);
-    com = sprintf('%s = pop_tesa_fixtrigger( %s, ''%s'', %s, ''%s'' );', inputname(1), inputname(1), elec, mat2str(newEpoch), tmsLabel );
+    EEG = tesa_fixevent(EEG,elec,newEpoch,tmsLabel);
+    com = sprintf('%s = pop_tesa_fixevent( %s, ''%s'', %s, ''%s'' );', inputname(1), inputname(1), elec, mat2str(newEpoch), tmsLabel );
 elseif nargin > 4
-    EEG = tesa_fixtrigger(EEG,elec,newEpoch,tmsLabel,varargin{:});
-    com = sprintf('%s = pop_tesa_fixtrigger( %s,''%s'',%s,''%s'',%s );', inputname(1), inputname(1), elec, mat2str(newEpoch), tmsLabel, vararg2str(varargin) );
+    EEG = tesa_fixevent(EEG,elec,newEpoch,tmsLabel,varargin{:});
+    com = sprintf('%s = pop_tesa_fixevent( %s,''%s'',%s,''%s'',%s );', inputname(1), inputname(1), elec, mat2str(newEpoch), tmsLabel, vararg2str(varargin) );
 end
     
 %find artifact and return the string command using pop window info
 if nargin < 2
     if result{1,6}==0
-        EEG = tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel, 'refract', refract, 'rate', rate);
-        com = sprintf('%s = pop_tesa_fixtrigger( %s, ''%s'', %s, ''%s'', ''refract'', %s, ''rate'', %s );', inputname(1), inputname(1), elec, mat2str(newEpoch), tmsLabel, mat2str(refract), mat2str(rate));
+        EEG = tesa_fixevent( EEG, elec, newEpoch, tmsLabel, 'refract', refract, 'rate', rate);
+        com = sprintf('%s = pop_tesa_fixevent( %s, ''%s'', %s, ''%s'', ''refract'', %s, ''rate'', %s );', inputname(1), inputname(1), elec, mat2str(newEpoch), tmsLabel, mat2str(refract), mat2str(rate));
     elseif result{1,6}==1
-        EEG = tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel, 'refract', refract, 'rate', rate, 'paired', paired, 'ISI', ISI );
-        com = sprintf('%s = pop_tesa_fixtrigger( %s, ''%s'', %s, ''%s'', ''refract'', %s, ''rate'', %s, ''paired'', ''%s'', ''ISI'', %s);', inputname(1), inputname(1), elec, mat2str(newEpoch), tmsLabel, mat2str(refract), mat2str(rate), paired, mat2str(ISI));
+        EEG = tesa_fixevent( EEG, elec, newEpoch, tmsLabel, 'refract', refract, 'rate', rate, 'paired', paired, 'ISI', ISI );
+        com = sprintf('%s = pop_tesa_fixevent( %s, ''%s'', %s, ''%s'', ''refract'', %s, ''rate'', %s, ''paired'', ''%s'', ''ISI'', %s);', inputname(1), inputname(1), elec, mat2str(newEpoch), tmsLabel, mat2str(refract), mat2str(rate), paired, mat2str(ISI));
     end
 end
 

@@ -2,7 +2,7 @@
 %                       for either ROI or GMFA analyses.
 %                       Either positive or negative peaks are detected.
 %                       Peaks are defined as data point which is
-%                       larger/smaller than +/- x data points (default = 3,
+%                       larger/smaller than +/- x data points (default = 5,
 %                       however this can also be defined by user). Results
 %                       are saved in EEG structure under (either EEG.ROI or
 %                       EEG.GMFA). If no peak is found in the defined window, 
@@ -10,7 +10,7 @@
 %                       and a NaN is returned in latency. The analysis is run on 
 %                       all existing outputs from tesa_tepextract (e.g. ROIs or GMFA), unless
 %                       the user opts to run the analysis on one specific
-%                       ROI.
+%                       ROI or GMFA.
 % 
 %                       Note that tesa_tepextract must be run prior to this script.
 %

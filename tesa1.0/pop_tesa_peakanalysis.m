@@ -109,7 +109,9 @@ if nargin < 2
         gmfa = 'no';
     end
     
-    if strcmpi(roi,'yes') && strcmpi(gmfa,'yes')
+    if strcmpi(roi,'no') && strcmpi(gmfa,'no')
+        error('There are no ROI or GMFA analyses in this data. Please run tesa_tepextract first.');
+    elseif strcmpi(roi,'yes') && strcmpi(gmfa,'yes')
         tepInput = ['ROI all'; roiFields; 'GMFA all'; gmfaFields];
     elseif strcmpi(roi,'yes') && strcmpi(gmfa,'no')
         tepInput = ['ROI all'; roiFields];

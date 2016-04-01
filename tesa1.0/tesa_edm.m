@@ -1,5 +1,5 @@
 % tesa_edm()    - find artefactual components automatically by using the 
-%                 EDM algorithm as advocated in 
+%                 enhanced deflation method (EDM) algorithm as advocated in 
 %                 the following paper:
 %
 %                 Korhonen, Hernandez-Pavon et al (2011) Removal of 
@@ -9,7 +9,7 @@
 % 
 %                 The function uses the same algorithmn as tesa_compselect
 %                 to automatically detect components representing the
-%                 TMS-evoked muscle artefact. Settings for this detection
+%                 TMS-evoked muscle artifact. Settings for this detection
 %                 can be manually altered by the user.
 % Usage:
 %   >>  EEG = tesa_edm( EEG );

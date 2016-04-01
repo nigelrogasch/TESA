@@ -136,7 +136,7 @@ if strcmp(type,'ROI')
     
     %Replace spaces with underscore
     if ~isempty(options.tepName)
-        options.tepName = strrep(options.tepName,' ','_')
+        options.tepName = strrep(options.tepName,' ','_');
     end
 
     %Check if ROI name already exists
@@ -283,7 +283,7 @@ if strcmp(type,'GMFA')
 
     %Replace spaces with underscore
     if ~isempty(options.tepName)
-        options.tepName = strrep(options.tepName,' ','_')
+        options.tepName = strrep(options.tepName,' ','_');
     end
     
     %Check if GMFA name already exists

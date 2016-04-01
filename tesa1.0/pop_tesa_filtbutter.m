@@ -11,22 +11,25 @@
 % Inputs:
 %   EEG             - EEGLAB EEG structure
 %   high            - integer (required). Highpass frequency (allow frequencies
-%                   above this value)
+%                   above this value with bandpass)
 %                   Example: 1
 %   low             - integer (required). Lowpass frequency (allow
-%                   frequencies below this value)
+%                   frequencies below this value with bandpass)
 %                   Example: 50
 %   ord             - integer (required). Filter order.
 %                   Example: 4 (designs a fourth order butterworth filter)
 %   type            - 'str' (required). 'bandpass' | 'bandstop'. Designs either
-%                   a zerophase bandpass or bandstop butterworth filter
+%                   a zero-phase bandpass or bandstop butterworth filter
+%    
+% Outputs:
+%   EEG             - EEGLAB EEG structure
 %    
 % Outputs:
 %   EEG             - EEGLAB EEG structure
 %
 % Examples
-%   EEG = pop_tesa_filtbutter( EEG, 1, 100, 4, 'bandpass' ); %zerophase, 4th-order bandpass butterworth filter between 1 to 100 Hz
-%   EEG = pop_tesa_filtbutter( EEG, 48, 52, 4, 'bandstop' ); %zerophase, 4th-order bandstop butterworth filter between 48-52 Hz
+%   EEG = pop_tesa_filtbutter( EEG, 1, 100, 4, 'bandpass' ); %zero-phase, 4th-order bandpass butterworth filter between 1-100 Hz
+%   EEG = pop_tesa_filtbutter( EEG, 48, 52, 4, 'bandstop' ); %zero-phase, 4th-order bandstop butterworth filter between 48-52 Hz
 % 
 % See also:
 %   eegfiltnew

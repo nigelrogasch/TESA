@@ -40,7 +40,7 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     % menu callbacks
     % --------------
     comfindpulse = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_findpulse(EEG);' catch_strings.add_to_hist];
-    comfixtrigger = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_fixtrigger(EEG);' catch_strings.add_to_hist];
+    comfixevent = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_fixevent(EEG);' catch_strings.add_to_hist];
     comremovedata = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_removedata(EEG);' catch_strings.new_and_hist];
     cominterpdata = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_interpdata(EEG);' catch_strings.new_and_hist];
     comfastica = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_fastica(EEG);' catch_strings.new_and_hist];
@@ -61,7 +61,7 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     % -------------------------
     submenu = uimenu( menu, 'Label', 'TMS-EEG signal analyser (TESA)', 'separator', 'on');
     uimenu( submenu, 'Label', 'Find TMS pulse'  , 'CallBack', comfindpulse);
-    uimenu( submenu, 'Label', 'Fix TMS pulse latency'  , 'CallBack', comfixtrigger);
+    uimenu( submenu, 'Label', 'Fix TMS pulse latency'  , 'CallBack', comfixevent);
     uimenu( submenu, 'Label', 'Remove artifact data'  , 'CallBack', comremovedata, 'separator', 'on');
     uimenu( submenu, 'Label', 'Interpolate removed data'  , 'CallBack', cominterpdata);
     uimenu( submenu, 'Label', 'FastICA'  , 'CallBack', comfastica, 'separator', 'on' );

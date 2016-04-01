@@ -16,7 +16,7 @@
 % 
 % Optional input pairs:
 %   'refract',int   - int defines the refractory period (the time for the
-%                   TMS artefact to recover below the rate of change). int
+%                   TMS artifact to recover below the rate of change). int
 %                   is an integer in ms. 
 %                   default = 3
 % 
@@ -167,7 +167,7 @@ rateS = options.rate.*h; %Convert rate in to change in uV per sample
 logstim = abs(der1)>rateS;
 samp =(1:size(data,2));
 stim = samp(logstim);
-stim = stim-1; %Makes start of artefact the defining point
+stim = stim-1; %Makes start of artifact the defining point
 
 %Remove triggers within refractory period
 sRef = ceil(EEG.srate./1000.*options.refract); %converts refractory period to samples
@@ -188,7 +188,7 @@ if strcmp(options.plots,'on');
     plot(1:1:EEG.pnts,data(1,1:end),'b');
     hold on;
     plot(stimAll(1,1:end), stimAmp(1,1:end),'r.');
-    title(['TMS pulse artefacts identified in electrode ', elec]);
+    title(['TMS pulse artifacts identified in electrode ', elec]);
 end; 
 
 %Trims any white space from the single label

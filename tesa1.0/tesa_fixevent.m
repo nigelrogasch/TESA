@@ -1,6 +1,6 @@
-% tesa_fixtrigger() - finds TMS pulses by detecting the large TMS artifacts
+% tesa_fixevent() - finds TMS pulses by detecting the large TMS artifacts
 %                   present in already epoched data. This script is
-%                   designed for instances when the recoreded triggers do
+%                   designed for instances when the recorded events do
 %                   not correspond with when the TMS pulse was given.
 %                   The script works by extracting a
 %                   single channel and finding the time points in which the 
@@ -11,8 +11,8 @@
 %                   that the initial epochs you use are larger than the
 %                   final epoch size you desire. If the initial epoch size is
 %                   too small, the new epoch window will be out of range 
-%                   with the new triggers. E.g. inital epoch is -100 to 100
-%                   and the trigger is shifted 10 ms so the new 0 now sits
+%                   with the new events. E.g. inital epoch is -100 to 100
+%                   and the event is shifted 10 ms so the new 0 now sits
 %                   at 10 ms. Re-epoching the data to -100 to 100 won't
 %                   work as the new range is effectively -90 to 110. In this case, 
 %                   run the initial epoch at -120 to 120 and the epoch can now
@@ -20,8 +20,8 @@
 %                   
 %
 % Usage:
-%   >>  EEG = tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel );
-%   >>  EEG = tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel, 'key1', value1... );
+%   >>  EEG = tesa_fixevent( EEG, elec, newEpoch, tmsLabel );
+%   >>  EEG = tesa_fixevent( EEG, elec, newEpoch, tmsLabel, 'key1', value1... );
 %
 % Inputs:
 %   EEG             - EEGLAB EEG structure
@@ -29,7 +29,7 @@
 %   newEpoch        - [required] vector with start and end time of new epoch in
 %                   seconds (following pop_epoch convention). 
 %                   Example: [-1,1] %For -1 s to 1s epoch
-%   tmsLabel        - [required] string indicating the trigger that requires 
+%   tmsLabel        - [required] string indicating the event that requires 
 %                   correcting (e.g. 'TMS')  
 %                   
 % Optional input pairs:
@@ -53,9 +53,9 @@
 %   EEG             - EEGLAB EEG structure
 %
 %   % Examples
-%   EEG = tesa_fixtrigger( EEG, 'Cz', [-0.8,0.8], 'TMS' ); %default use
-%   EEG = tesa_fixtrigger( EEG, 'Fz', [-0.7,0.7], 'TMS', 'refract', 4, 'rate', 2e5 ); %user defined input
-%   EEG = tesa_fixtrigger( EEG, 'Cz', [-0.8,0.8], 'LICI', 'paired', 'yes', 'ISI', 100 ); %paired pulse use
+%   EEG = tesa_fixevent( EEG, 'Cz', [-0.8,0.8], 'TMS' ); %default use
+%   EEG = tesa_fixevent( EEG, 'Fz', [-0.7,0.7], 'TMS', 'refract', 4, 'rate', 2e5 ); %user defined input
+%   EEG = tesa_fixevent( EEG, 'Cz', [-0.8,0.8], 'LICI', 'paired', 'yes', 'ISI', 100 ); %paired pulse use
 %
 % See also:
 %   tesa_findpulse, tesa_findpulsepeak
@@ -77,7 +77,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-function EEG = tesa_fixtrigger( EEG, elec, newEpoch, tmsLabel, varargin )
+function EEG = tesa_fixevent( EEG, elec, newEpoch, tmsLabel, varargin )
 
 if nargin < 4
 	error('Not enough input arguments.');
@@ -203,7 +203,7 @@ if strcmp(options.paired,'yes')
             samp =(1:size(data,2));
             stim = samp(logstim);
 
-            %Remove triggers within refractory period
+            %Remove events within refractory period
             sRef = ceil(EEG.srate./1000.*options.refract); %converts refractory period to samples
             refPer = stim(1,1)+sRef; %defines refractory period following stimulus
             stimAll = [];
