@@ -45,8 +45,8 @@ inMat=EEG1;
 %Runs singular value decomposition
 [U,S,V]=svd(inMat*inMat');
 d=diag(sqrt(S));
-
+m=rank(inMat);
 % Whitening matrix
-EEGwhite=sqrt(T)*diag(1./d)*U'*inMat; %Whitening matrix
+EEGwhite=sqrt(T)*diag(1./d(1:m))*U(:,1:m)'*inMat; %Whitening matrix
         
 end
