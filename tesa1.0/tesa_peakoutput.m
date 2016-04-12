@@ -138,6 +138,9 @@ if strcmp(options.winType,'individual')
                 if isfield(EEG.ROI,roiNum{a,1})
                     fieldNum = fieldnames(EEG.ROI.(roiNum{a,1}));
                     peakNum = fieldNum(logical(strncmpi(fieldNum,'P',1) + strncmpi(fieldNum,'N',1)));
+                    numAll = arrayfun(@(x) str2num(peakNum{x}(2:end)), 1:size(peakNum,1));
+                    [Y,Z] = sort(numAll);
+                    peakNum = peakNum(Z);
                     for b = 1:size(peakNum,1)
                         if isempty(output)
                             num = 1;
@@ -197,6 +200,9 @@ if strcmp(options.winType,'individual')
              if isfield(EEG.GMFA,roiNum{a,1})
                 fieldNum = fieldnames(EEG.GMFA.(roiNum{a,1}));
                 peakNum = fieldNum(logical(strncmpi(fieldNum,'P',1) + strncmpi(fieldNum,'N',1)));
+                numAll = arrayfun(@(x) str2num(peakNum{x}(2:end)), 1:size(peakNum,1));
+                [Y,Z] = sort(numAll);
+                peakNum = peakNum(Z);
                 for b = 1:size(peakNum,1)
                     if isempty(output)
                         num = 1;
@@ -270,6 +276,8 @@ if strcmp(options.winType,'fixed')
     end
     
     output = [];
+    
+    options.fixedPeak = sort(options.fixedPeak);
 
     if isfield(EEG, 'ROI')
         if strcmp(options.calcType,'amplitude')

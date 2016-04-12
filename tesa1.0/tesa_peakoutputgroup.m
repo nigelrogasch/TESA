@@ -132,8 +132,6 @@ if strcmp(options.calcType,'area') && isempty(options.averageWin)
     error('For area under curve, an analysis time window must also be entered using averageWin. For example ''averageWin'', 5.');
 end
 
-
-
 %Get information from other files
 fileInfo = dir([EEG.filepath,filesep,'*.set']);
 
@@ -154,12 +152,23 @@ if strcmp(options.winType,'individual')
     teps = fieldnames(EEG.(tepType).(tepName));
     tepLog = strncmp('P',teps,1) | strncmp('N',teps,1);
     clabels = teps(tepLog)';
+    numAll = arrayfun(@(x) str2num(clabels{x}(2:end)), 1:size(clabels,2));
+    [Y,Z] = sort(numAll);
+    clabels = clabels(Z);
     for x = 1:size(clabels,2)
-        clabelsamp{1,x} = [clabels{1,x},' amp'];
-        clabelslat{1,x} = [clabels{1,x},' lat'];
+        if strcmp(options.calcType,'amplitude')
+            clabelsamp{1,x} = [clabels{1,x},'amp'];
+        elseif strcmp(options.calcType,'area')
+            clabelsamp{1,x} = [clabels{1,x},'area'];
+        end
+        clabelslat{1,x} = [clabels{1,x},'lat'];
     end
     cnames = [clabelsamp,clabelslat];
 elseif strcmp(options.winType,'fixed')
+    teps = fieldnames(EEG.(tepType).(tepName));
+    tepLog = strncmp('P',teps,1) | strncmp('N',teps,1);
+    clabels = teps(tepLog)';
+    options.fixedPeak = sort(options.fixedPeak);
     for x = 1:size(options.fixedPeak,2)
         cnames{1,x} = num2str(options.fixedPeak(1,x));
     end
@@ -181,6 +190,8 @@ for x = 1:size(fileNames,1)
     %Run script
     output = tesa_peakoutput(EEG,'tepName',tepName,'calcType',options.calcType,'winType',options.winType,'averageWin',options.averageWin,'fixedPeak',options.fixedPeak,'tablePlot','off');
     
+    output1(x).participant = rnames{1,x};
+    
     %For calcType individual
     if strcmp(options.winType,'individual')
         for y = 1:size(output,2)
@@ -194,10 +205,13 @@ for x = 1:size(fileNames,1)
                 if strcmp(output(y).analysis,tepType) && strcmp(output(y).peak,clabels(1,a))
                     if strcmp(options.calcType,'amplitude')
                         d(x,a) = output(y).amp;
+                        output1(x).(clabelsamp{1,a}) = output(y).amp;
                     elseif strcmp(options.calcType,'area')
                         d(x,a) = output(y).area;
+                        output1(x).(clabelsamp{1,a}) = output(y).area;
                     end
                     d(x,a+size(clabels,2)) = output(y).lat;
+                    output1(x).(clabelslat{1,a}) = output(y).lat;
                     present = 1;
                 end
             end
@@ -213,8 +227,10 @@ for x = 1:size(fileNames,1)
                 if strcmp(output(y).analysis,tepType) && strcmp(num2str(output(y).peak),cnames{1,a})
                     if strcmp(options.calcType,'amplitude')
                         d(x,a) = output(y).amp;
+                        output1(x).(clabels{1,a}) = output(y).amp;
                     elseif strcmp(options.calcType,'area')
                         d(x,a) = output(y).area;
+                        output1(x).(clabels{1,a}) = output(y).area;
                     end
                 end
             end
@@ -246,6 +262,6 @@ if strcmpi(options.tablePlot,'on')
         
 end
 
-output = d;
+output = output1;
 
 end
