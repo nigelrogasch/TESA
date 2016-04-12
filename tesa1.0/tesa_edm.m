@@ -127,6 +127,11 @@ if strcmpi(options.tmsMuscle,'on')
     
 end
 
+%Check for channel locations
+if isempty(EEG.chanlocs(1).theta)
+    error('Channel locations are required for this function. Please load channel locations: Edit -> Channel locations.')
+end
+
 % Preprocessing steps before running ICA 
 [EEGwhite,inMat,Meanb] = tesa_edmpreprocess(EEG); 
 T=size(inMat,2);
