@@ -262,6 +262,11 @@ function EEG = tesa_compselect( EEG , varargin )
         error('There are no stored components in the data. Please run ICA before running this script. See tesa_fastica.')
     end
     
+    %Check for channel locations
+    if isempty(EEG.chanlocs(1).theta)
+        error('Channel locations are required for this function. Please load channel locations: Edit -> Channel locations.')
+    end
+    
     %Check comps input
     if ~isempty(options.comps)
         if size(EEG.icaweights,1) < options.comps
