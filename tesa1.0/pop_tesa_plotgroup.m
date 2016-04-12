@@ -113,6 +113,8 @@ if nargin < 2
         tepInput = ['All', chanAll, roiFields'];
     elseif strcmpi(roi,'no') && strcmpi(gmfa,'yes')
         tepInput = ['All', chanAll, gmfaFields'];
+    elseif strcmpi(roi,'no') && strcmpi(gmfa,'no')
+        tepInput = ['All', chanAll];
     end
     
     tepAll = tepInput;
