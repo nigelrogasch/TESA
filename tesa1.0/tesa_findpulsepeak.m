@@ -86,7 +86,7 @@
 % See also:
 %   tesa_findpulse, tesa_fixtrigger 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % Authors:
@@ -239,7 +239,7 @@ global redo
     %gdspk = selectspike(spk);
 while redo==true
     f= figure; 
-    h1= plot((tms(1:end)),(dat(1:end,1)),'b');
+    h1= plot((tms),(dat),'b');
     hold on;
     h2= plot(spk.tms, spk.amp,'k.');  
     title('Inspect the detected peaks...','BackgroundColor',[0.729411780834198 0.831372559070587 0.95686274766922])
@@ -255,7 +255,7 @@ while redo==true
     hold on; plot(gdspk.tms, gdspk.amp,'ro');  
 ButtonName = questdlg('Are you happy with the peaks selected?', ...
                          'Verify Selection', ...
-                         'No-Redo', 'Yes-Continue', 'Cancel', 'Yes-Continue');
+                         'No-Redo', 'Yes-Continue', 'Cancel', 'Redo');
    switch ButtonName,
      case 'No-Redo',
       redo=true;
@@ -328,7 +328,7 @@ if strcmp(options.paired,'yes')
     end
     
     %Check that paired labels are unique
-    if ~size(unique(options.pairLabel),2) == size(options.pairLabel,2)
+    if ~(size(unique(options.pairLabel),2) == size(options.pairLabel,2))
         error('Paired labels are not unique. Please ensure each label is different.')
     end
     
