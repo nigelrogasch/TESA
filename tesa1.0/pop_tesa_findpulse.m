@@ -71,7 +71,7 @@
 %   EEG = pop_tesa_findpulse( EEG, 'Cz', 'repetitive', 'yes', 'ITI', 26, 'pulseNum', 40 ); %rTMS use 
 %
 % See also:
-%   tesa_findpulsepeak, tesa_fixtrigger
+%   pop_tesa_findpulsepeak, pop_tesa_fixevent
 
 % Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
