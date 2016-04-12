@@ -1,4 +1,4 @@
-% tesa_findpulsepeak() - finds TMS pulses by detecting the large TMS artifacts
+% pop_tesa_findpulsepeak() - finds TMS pulses by detecting the large TMS artifacts
 %                   peaks in the data. This script works by extracting a
 %                   single channel and finding the time points in which a peak
 %                   above a certain threshold is detected. Different
@@ -86,7 +86,7 @@
 %   EEG = pop_tesa_findpulsepeak( EEG, 'Cz', 'repetitive', 'yes', 'ITI', 26, 'pulseNum', 40 ); %rTMS use 
 %
 % See also:
-%   tesa_findpulse, tesa_fixtrigger 
+%   pop_tesa_findpulse, pop_tesa_fixevent 
 
 % Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
@@ -170,8 +170,9 @@ if nargin < 2
               {'style', 'text', 'string', 'Number of pulses in train [required]'} ...
               {'style', 'edit', 'string', ''}};
              
-    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Find TMS pulses -- pop_tesa_findpulsepeak()', 'helpcom', 'pophelp(''tesa_findpulsepeak'')');
-     
+    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Find TMS pulses -- pop_tesa_findpulsepeak()', 'helpcom', 'pophelp(''pop_tesa_findpulsepeak'')');
+    if isempty(result), return; end;
+    
     %Check that both paired and repetitive are not on
     if result{1,7} == 1 && result{1,10} == 1
         error('tesa_findpulsepeak can not search for both paired and repetitive stimuli within the same file. Please choose one.');
@@ -199,7 +200,7 @@ if nargin < 2
     elseif result{1,3} == 3;
         geometry = {[1 0.3]};
         uilist = {{'style', 'text', 'string', 'Threshold for artifact detection (uV)'} ...
-                    {'style', 'edit', 'string', chan}};
+                    {'style', 'edit', 'string', '1000'}};
         result2 = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Manual threshold for artifact');       
         thrshtype = str2num(result2{1,1});
     end
@@ -247,6 +248,7 @@ if nargin < 2
 
 end
     chan=mat2str(elec);
+    thrshtype1 = mat2str(thrshtype);
 %Run script from input
 if nargin == 2;
     EEG = tesa_findpulsepeak(EEG,elec);
@@ -261,38 +263,38 @@ end
 if nargin < 2
     if result{1,7} == 0 && result{1,10} == 0
         EEG = tesa_findpulsepeak( EEG, elec, 'dtrnd', dtrnd, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel );
-        if ischar(thrshtype)
-            thrshtype1 = mat2str(thrshtype);
-        else
-            thrshtype1 = thrshtype;
-        end
+%         if ~ischar(thrshtype)
+%             thrshtype1 = mat2str(thrshtype);
+%         else
+%             thrshtype1 = thrshtype;
+%         end
         com = sprintf('%s = tesa_findpulsepeak( %s, %s, ''dtrnd'', ''%s'', ''thrshtype'', %s, ''wpeaks'', ''%s'', ''plots'', ''%s'', ''tmsLabel'', ''%s'');', inputname(1), inputname(1), chan, dtrnd, thrshtype1, wpeaks, plots, tmsLabel);
     elseif result{1,7} == 1
         if strcmp(pairLabel{1,1},'')
             EEG = tesa_findpulsepeak( EEG, elec, 'dtrnd', dtrnd, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'paired', paired, 'ISI', ISI );
-            if ischar(thrshtype)
-                thrshtype1 = mat2str(thrshtype);
-            else
-                thrshtype1 = thrshtype;
-            end
+%             if ~ischar(thrshtype)
+%                 thrshtype1 = mat2str(thrshtype);
+%             else
+%                 thrshtype1 = thrshtype;
+%             end
             com = sprintf('%s = tesa_findpulsepeak( %s, %s, ''dtrnd'', ''%s'', ''thrshtype'', %s, ''wpeaks'', ''%s'', ''plots'', ''%s'', ''tmsLabel'', ''%s'', ''paired'', ''%s'', ''ISI'', %s);', inputname(1), inputname(1), chan, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, paired, mat2str(ISI));
 
         else
             EEG = tesa_findpulsepeak( EEG, elec, 'dtrnd', dtrnd, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'paired', paired, 'ISI', ISI, 'pairLabel', pairLabel);
-            if ischar(thrshtype)
-                thrshtype1 = mat2str(thrshtype);
-            else
-                thrshtype1 = thrshtype;
-            end
+%             if ~ischar(thrshtype)
+%                 thrshtype1 = mat2str(thrshtype);
+%             else
+%                 thrshtype1 = thrshtype;
+%             end
             com = sprintf('%s = tesa_findpulsepeak( %s, %s, ''dtrnd'', ''%s'', ''thrshtype'', %s, ''wpeaks'', ''%s'', ''plots'', ''%s'', ''tmsLabel'', ''%s'', ''paired'', ''%s'', ''ISI'', %s, ''pairLabel'', {%s});', inputname(1), inputname(1), chan, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, paired, mat2str(ISI), pairString);
         end
     elseif result{1,10} == 1
         EEG = tesa_findpulsepeak( EEG, elec, 'dtrnd', dtrnd, 'thrshtype', thrshtype, 'wpeaks', wpeaks, 'plots', plots, 'tmsLabel', tmsLabel, 'repetitive',repetitive, 'ITI', ITI, 'pulseNum', pulseNum);
-        if ischar(thrshtype)
-            thrshtype1 = mat2str(thrshtype);
-        else
-            thrshtype1 = thrshtype;
-        end
+%         if ~ischar(thrshtype)
+%             thrshtype1 = mat2str(thrshtype);
+%         else
+%             thrshtype1 = thrshtype;
+%         end
         com = sprintf('%s = tesa_findpulsepeak( %s, %s, ''dtrnd'', ''%s'', ''thrshtype'', %s, ''wpeaks'', ''%s'', ''plots'', ''%s'', ''tmsLabel'', ''%s'', ''repetitive'', ''%s'', ''ITI'', %s, ''pulseNum'', %s);', inputname(1), inputname(1), chan, dtrnd, thrshtype1, wpeaks, plots, tmsLabel, repetitive, mat2str(ITI), mat2str(pulseNum));
     end
 end

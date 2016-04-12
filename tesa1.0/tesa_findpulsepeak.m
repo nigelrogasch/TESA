@@ -84,7 +84,7 @@
 %   EEG = tesa_findpulsepeak( EEG, 'Cz', 'repetitive', 'yes', 'ITI', 26, 'pulseNum', 40 ); %rTMS use 
 %
 % See also:
-%   tesa_findpulse, tesa_fixtrigger 
+%   tesa_findpulse, tesa_fixevent 
 
 % Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
@@ -255,7 +255,7 @@ while redo==true
     hold on; plot(gdspk.tms, gdspk.amp,'ro');  
 ButtonName = questdlg('Are you happy with the peaks selected?', ...
                          'Verify Selection', ...
-                         'No-Redo', 'Yes-Continue', 'Cancel', 'Redo');
+                         'No-Redo', 'Yes-Continue', 'Cancel', 'No-Redo');
    switch ButtonName,
      case 'No-Redo',
       redo=true;
