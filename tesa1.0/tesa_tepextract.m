@@ -142,7 +142,7 @@ if strcmp(type,'ROI')
     %Check if ROI name already exists
     if isfield(EEG,'ROI')
         if isfield(EEG.ROI,options.tepName)
-            error('tepName ''%s'' already exists. Please choose another name',options.tepName)
+            error('tepName ''%s'' already exists. Please choose another name',options.tepName);
         end
     end
 
