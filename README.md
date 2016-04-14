@@ -18,4 +18,4 @@ If you use this software, please read and cite the following open access journal
 Any bugs or suggestions for improving TESA are greatly appreciated, and can be made via the [issues](https://github.com/BMHLab/TESA/issues) tab.
 
 ##Contributing to TESA
-Developing methods for cleaning and analysing TMS-EEG data is an active area of research. Users are welcome to submit new functions to be included in TESA by contacting [Nigel Rogasch](nigel.rogasch@gmail.com).
+Developing methods for cleaning and analysing TMS-EEG data is an active area of research. Users are welcome to submit new functions to be included in TESA by contacting [Nigel Rogasch](<mailto:nigel.rogasch@gmail.com>).
