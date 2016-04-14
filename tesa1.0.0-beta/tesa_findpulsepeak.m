@@ -36,11 +36,9 @@
 %                   default = 'dymanic'
 %   'wpeaks','str' - 'pos'|'neg'|'gui'. Defines whether to use the
 %                   positive or negative peak to define the artifact, or to
-%                   use an interactive GUI. For the GUI, the two horizontal
-%                   bars are moved to include either the higher or lower
-%                   values (i.e. positive or negative). In a case where
-%                   there is extreme drift in the data, the points can be
-%                   created to 'bend' the lines.
+%                   use an interactive GUI. For the GUI, a box is generated
+%                   by clicking and dragging the mouse cursor. Peaks within
+%                   the box will be included as events.
 %                   default = 'pos'
 %   'plots','str' - 'on'|'off'. Brings up a plot showing the detected
 %                   peaks. Black = detected, pink = selected for
@@ -264,7 +262,7 @@ ButtonName = questdlg('Are you happy with the peaks selected?', ...
       case 'Cancel',
           redo=false; close all ; return ;
    end % switch
-close all
+close
 end
 %       f= figure; 
 %     h1= plot((tms(1:end)),(dat(1:end,1)),'b');

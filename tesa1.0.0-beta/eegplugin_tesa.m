@@ -51,6 +51,7 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     compcasuppress = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_pcasuppress(EEG);' catch_strings.new_and_hist];
     comdetrend = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_detrend(EEG);' catch_strings.new_and_hist];
     comfiltbutter = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_filtbutter(EEG);' catch_strings.new_and_hist];
+    comfiltmedian = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_filtmedian(EEG);' catch_strings.new_and_hist];
     comtepextract = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_tepextract(EEG);' catch_strings.add_to_hist];
     compeakanalysis = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_peakanalysis(EEG);' catch_strings.add_to_hist];
     compeakoutput = [try_strings.no_check '[output LASTCOM] = pop_tesa_peakoutput(EEG);' catch_strings.add_to_hist];
@@ -73,6 +74,7 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     uimenu( submenu, 'Label', 'PCA suppression'  , 'CallBack', compcasuppress);
     uimenu( submenu, 'Label', 'Detrend data'  , 'CallBack', comdetrend);
     uimenu( submenu, 'Label', 'Butterworth filter'  , 'CallBack', comfiltbutter, 'separator', 'on');
+    uimenu( submenu, 'Label', 'Median filter'  , 'CallBack', comfiltmedian);
     uimenu( submenu, 'Label', 'Extract TEPs'  , 'CallBack', comtepextract, 'separator', 'on');
     uimenu( submenu, 'Label', 'Find and analyse TEP peaks'  , 'CallBack', compeakanalysis);
     uimenu( submenu, 'Label', 'Output TEP peak analysis'  , 'CallBack', compeakoutput);
