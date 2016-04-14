@@ -12,7 +12,6 @@ A detailed description on how to use TESA is available in the TESA user manual w
 ##Citations and acknowledgements
 If you use this software, please read and cite the following open access journal article:
 * Paper coming soon.
-* 
 
 ##Comments and bugs
 Any bugs or suggestions for improving TESA are greatly appreciated, and can be made via the [issues](https://github.com/BMHLab/TESA/issues) tab.
