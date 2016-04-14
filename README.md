@@ -1,6 +1,8 @@
 # TESA
 The TMS-EEG signal analyser (TESA) is an open source extension for [EEGLAB](http://sccn.ucsd.edu/eeglab/) that includes functions necessary for cleaning and analysing TMS-EEG data. Both EEGLAB and TESA run in [Matlab](http://au.mathworks.com/) (r2015b or later). 
 
+The current release is a beta version and is still undergoing testing.
+
 ##Downloading TESA
 To download TESA, press the 'Download Zip' button located further up the page.
 
