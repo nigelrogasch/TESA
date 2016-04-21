@@ -4,12 +4,20 @@ The TMS-EEG signal analyser (TESA) is an open source extension for [EEGLAB](http
 The current release is a beta version and is still undergoing testing.
 
 ##Downloading TESA
-To download TESA, press the 'Download Zip' button located further up the page.
+To download TESA, press the 'Download Zip' button located further up the page or by visiting the following home site:
 
-Users familiar with github can also pull the repository.
+
+Users familiar with github can also pull the repository. Please create your own fork.
 
 ##TESA user manual
-A detailed description on how to use TESA is available in the TESA user manual which can be accessed via gitbooks here. The user manual is available online or can be download in pdf, epub and mobi formats. 
+A detailed description on how to use TESA is available in the TESA user manual which can be accessed via gitbooks: 
+
+
+The user manual is available online or can be download in pdf, epub and mobi formats. 
+
+##Example data and scripts
+Some example scripts and example data for trialing TESA are available from figShare:
+
 
 ##Citations and acknowledgements
 If you use this software, please read and cite the following open access journal article:
