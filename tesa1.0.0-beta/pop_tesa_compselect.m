@@ -42,6 +42,9 @@
 %   EEG             - EEGLAB EEG structure
 % 
 % Optional input pairs (varargin):
+%   'compCheck','str' - 'on' | 'off'. Turns on or off the component plots
+%                   for checking automated component selection. On is highly recommended. 
+%                   Default: 'on'
 %   'comps',int     - int is an integer describing the number of components
 %                   to perform selection on (e.g. first 10 components).
 %                   Leave empty for all components. 
@@ -210,7 +213,7 @@ if nargin < 2
     geometry = {[0.5 1] 1 [1 0.5 1 0.5] [1 0.5 1 0.5] 1 ... %Figure
                 [0.45 1] 1 [1 0.5 1 0.5] [1 0.5 1 0.5] [1 0.5 1 0.5] [1 0.5 1 0.5] 1 ... %TMS-evoked muscle and Eye Blink
                 [1 0.5 1 0.5] [1 0.5 1 0.5] [1 0.5 1 0.5] [1 0.5 1 0.5] 1  ... %Lateral eye movement and Muscle
-                [1 0.5 1.5] [1 0.5 1.5] [1 0.5 1.5] 1 1 ... %Electrode noise
+                [1 0.5 1 0.5] [1 0.5 1.5] [1 0.5 1.5] 1 1 ... %Electrode noise
                 };
             
     uilist = {{'style', 'text', 'string', ''} ...
@@ -264,7 +267,8 @@ if nargin < 2
               {'style', 'text', 'string', ''} ...                            
               {'style', 'text', 'string', 'Electrode noise','fontweight','bold'} ...
               {'Style', 'checkbox', 'string' 'on/off' 'value' 1 'tag' 'pair' } ...
-              {'style', 'text', 'string', ''} ...
+              {'style', 'text', 'string', 'Check auto-detect results','fontweight','bold'} ...
+              {'style', 'popupmenu', 'string', 'on|off', 'tag', 'check' } ...
               {'style', 'text', 'string', 'Threshold for detection'} ...
               {'style', 'edit', 'string', '4'} ...
               {'style', 'text', 'string', '  For further information on settings for artifact','fontAngle','italic'} ...
@@ -351,8 +355,13 @@ if nargin < 2
     else
         elecNoise = 'off';
     end
-    elecNoiseThresh = str2num(result{1,22});
-    if result{1,23} == 1
+    if result{1,22} == 1
+        compCheck = 'on';
+    else
+        compCheck = 'off';
+    end
+    elecNoiseThresh = str2num(result{1,23});
+    if result{1,24} == 1
         elecNoiseFeedback = 'on';
     else
         elecNoiseFeedback = 'off';
@@ -362,8 +371,8 @@ end
 
 %Run script from input
 if nargin <2
-    EEG = tesa_compselect(EEG,'comps',comps,'figSize',figSize,'plotTimeX',plotTimeX,'plotFreqX',plotFreqX,'tmsMuscle',tmsMuscle,'tmsMuscleThresh',tmsMuscleThresh,'tmsMuscleWin',tmsMuscleWin,'tmsMuscleFeedback',tmsMuscleFeedback,'blink',blink,'blinkThresh',blinkThresh,'blinkElecs',blinkElecs,'blinkFeedback',blinkFeedback,'move',move,'moveThresh',moveThresh,'moveElecs',moveElecs,'moveFeedback',moveFeedback,'muscle',muscle,'muscleThresh',muscleThresh,'muscleFreqWin',muscleFreqWin,'muscleFeedback',muscleFeedback,'elecNoise',elecNoise,'elecNoiseThresh',elecNoiseThresh,'elecNoiseFeedback',elecNoiseFeedback);
-    com = sprintf('%s = pop_tesa_compselect( %s,''comps'',%s,''figSize'',''%s'',''plotTimeX'',%s,''plotFreqX'',%s,''tmsMuscle'',''%s'',''tmsMuscleThresh'',%s,''tmsMuscleWin'',%s,''tmsMuscleFeedback'',''%s'',''blink'',''%s'',''blinkThresh'',%s,''blinkElecs'',{%s},''blinkFeedback'',''%s'',''move'',''%s'',''moveThresh'',%s,''moveElecs'',{%s},''moveFeedback'',''%s'',''muscle'',''%s'',''muscleThresh'',%s,''muscleFreqWin'',%s,''muscleFeedback'',''%s'',''elecNoise'',''%s'',''elecNoiseThresh'',%s,''elecNoiseFeedback'',''%s'' );', inputname(1), inputname(1),mat2str(comps),figSize,mat2str(plotTimeX),mat2str(plotFreqX),tmsMuscle,mat2str(tmsMuscleThresh),mat2str(tmsMuscleWin),tmsMuscleFeedback,blink,mat2str(blinkThresh),blinkString,blinkFeedback,move,mat2str(moveThresh),moveString,moveFeedback,muscle,mat2str(muscleThresh),mat2str(muscleFreqWin),muscleFeedback,elecNoise,mat2str(elecNoiseThresh),elecNoiseFeedback );
+    EEG = tesa_compselect(EEG,'compCheck',compCheck,'comps',comps,'figSize',figSize,'plotTimeX',plotTimeX,'plotFreqX',plotFreqX,'tmsMuscle',tmsMuscle,'tmsMuscleThresh',tmsMuscleThresh,'tmsMuscleWin',tmsMuscleWin,'tmsMuscleFeedback',tmsMuscleFeedback,'blink',blink,'blinkThresh',blinkThresh,'blinkElecs',blinkElecs,'blinkFeedback',blinkFeedback,'move',move,'moveThresh',moveThresh,'moveElecs',moveElecs,'moveFeedback',moveFeedback,'muscle',muscle,'muscleThresh',muscleThresh,'muscleFreqWin',muscleFreqWin,'muscleFeedback',muscleFeedback,'elecNoise',elecNoise,'elecNoiseThresh',elecNoiseThresh,'elecNoiseFeedback',elecNoiseFeedback);
+    com = sprintf('%s = pop_tesa_compselect( %s,''compCheck'',%s,''comps'',%s,''figSize'',''%s'',''plotTimeX'',%s,''plotFreqX'',%s,''tmsMuscle'',''%s'',''tmsMuscleThresh'',%s,''tmsMuscleWin'',%s,''tmsMuscleFeedback'',''%s'',''blink'',''%s'',''blinkThresh'',%s,''blinkElecs'',{%s},''blinkFeedback'',''%s'',''move'',''%s'',''moveThresh'',%s,''moveElecs'',{%s},''moveFeedback'',''%s'',''muscle'',''%s'',''muscleThresh'',%s,''muscleFreqWin'',%s,''muscleFeedback'',''%s'',''elecNoise'',''%s'',''elecNoiseThresh'',%s,''elecNoiseFeedback'',''%s'' );', inputname(1), inputname(1),compCheck,mat2str(comps),figSize,mat2str(plotTimeX),mat2str(plotFreqX),tmsMuscle,mat2str(tmsMuscleThresh),mat2str(tmsMuscleWin),tmsMuscleFeedback,blink,mat2str(blinkThresh),blinkString,blinkFeedback,move,mat2str(moveThresh),moveString,moveFeedback,muscle,mat2str(muscleThresh),mat2str(muscleFreqWin),muscleFeedback,elecNoise,mat2str(elecNoiseThresh),elecNoiseFeedback );
 elseif nargin > 2
     EEG = tesa_compselect(EEG,varargin{:});
     com = sprintf('%s = pop_tesa_compselect( %s, %s );', inputname(1), inputname(1), vararg2str(varargin) );
