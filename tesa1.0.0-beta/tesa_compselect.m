@@ -42,6 +42,9 @@
 %   EEG             - EEGLAB EEG structure
 % 
 % Optional input pairs (varargin):
+%   'compCheck','str' - 'on' | 'off'. Turns on or off the component plots
+%                   for checking automated component selection. On is highly recommended. 
+%                   Default: 'on'
 %   'comps',int     - int is an integer describing the number of components
 %                   to perform selection on (e.g. first 10 components).
 %                   Leave empty for all components. 
@@ -201,7 +204,7 @@ function EEG = tesa_compselect( EEG , varargin )
     end
 
     %define defaults
-    options = struct('comps',[], 'figSize','small','plotTimeX',[],'plotFreqX',[],'tmsMuscle','on','tmsMuscleThresh',[],...
+    options = struct('compCheck','on','comps',[], 'figSize','small','plotTimeX',[],'plotFreqX',[],'tmsMuscle','on','tmsMuscleThresh',[],...
         'tmsMuscleWin',[],'tmsMuscleFeedback','off','blink','on','blinkThresh',[],'blinkElecs',[],...
         'blinkFeedback','off','move','on','moveThresh',[],'moveElecs',[],'moveFeedback','off','muscle','on','muscleThresh',[],...
         'muscleFreqWin',[],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',[],'elecNoiseFeedback','off');
@@ -338,7 +341,7 @@ function EEG = tesa_compselect( EEG , varargin )
 
     %Calculates time course and variance
     compTimeCourse = arrayfun(@(x)eeg_getdatact(EEG, 'component', [x], 'projchan', []),1:size(EEG.icawinv,2),'UniformOutput', false);
-
+    
     global redo
     redo = true;
 
@@ -404,7 +407,7 @@ function EEG = tesa_compselect( EEG , varargin )
 
         %TMS-evoked muscle
         if strcmpi(options.tmsMuscle,'on')
-            
+
             %Check TMS muscle inputs
             if options.tmsMuscleThresh < 0
                 error('Input for ''tmsMuscleThresh'' must be greater than 0.');
@@ -414,7 +417,7 @@ function EEG = tesa_compselect( EEG , varargin )
                 error('Input for ''tmsMuscleWin'' must be within the limits of the data [%d to %d].',EEG.times(1,1),EEG.times(1,end));
             end
         end
-                          
+
         [val1,mt1] = min(abs(EEG.times-options.tmsMuscleWin(1,1)));
         [val2,mt2] = min(abs(EEG.times-options.tmsMuscleWin(1,2)));
         muscleScore = abs(mean(temp,2));
@@ -425,7 +428,7 @@ function EEG = tesa_compselect( EEG , varargin )
         end
 
         %Blink 
-            
+
         e = struct2cell(EEG.chanlocs);
         elec = squeeze(e(1,1,:));
 
@@ -438,7 +441,7 @@ function EEG = tesa_compselect( EEG , varargin )
             end
 
         end
-        
+
         if strcmpi(options.blink,'on')
             if isempty(eNum)
                 error('None of the electrodes selected to detect eye blinks are present in the data. Please enter alternative electrodes using ''blinkElecs'',{''elec1'',''elec2''}.');
@@ -452,14 +455,14 @@ function EEG = tesa_compselect( EEG , varargin )
 
         %Lateral eye movement
         if strcmpi(options.move,'on')
-            
+
             %Check TMS muscle inputs
             if options.moveThresh < 0
                 error('Input for ''moveThresh'' must be greater than 0.');   
             end
-            
+
         end
-        
+
         e = struct2cell(EEG.chanlocs);
         elec = squeeze(e(1,1,:));
 
@@ -485,7 +488,7 @@ function EEG = tesa_compselect( EEG , varargin )
 
         %Muscle
         if strcmpi(options.muscle,'on')
-            
+
             %Checks input for muscle
             if size(options.muscleFreqWin,2) ~=2
                 error('Inputs for ''muscleFreqWin'' must be in the following format: [low, high]. e.g. [31,100].');
@@ -493,7 +496,7 @@ function EEG = tesa_compselect( EEG , varargin )
                 error('Inputs for ''muscleFreqWin'' (%d to %d) are outside of the frequency range set by input ''plotFreqX'' (%d to %d). Please adjust.',options.muscleFreqWin(1,1),options.muscleFreqWin(1,2),options.plotFreqX(1,1),options.plotFreqX(1,2));
             end
         end
-            
+
         [val1,winF1] = min(abs(freq-options.muscleFreqWin(1,1)));
         [val2,winF2] = min(abs(freq-options.muscleFreqWin(1,2)));
         winFreq = mean(Y2(:,winF1:winF2),2);
@@ -508,7 +511,7 @@ function EEG = tesa_compselect( EEG , varargin )
         if strcmpi(options.elecNoiseFeedback,'on')
             fprintf('Comp. %d maximum electrode z score is %s.\n', compNum,num2str(max(abs(round(tempCompZ,2)))));
         end
-        
+
         %Select if component is artifact
         if strcmpi(options.tmsMuscle,'on') && tmsMuscleRatio >= options.tmsMuscleThresh
             compVal = 2;
@@ -523,108 +526,112 @@ function EEG = tesa_compselect( EEG , varargin )
         else
             compVal = 1;
         end
-        
-        %##########
-        %Plots the figure
 
-        %Decide colour of figure
-        if compVal ~= 1
-            colour = 'r'; % if artifact
+        if strcmp(options.compCheck,'on')
+            %##########
+            %Plots the figure
+
+            %Decide colour of figure
+            if compVal ~= 1
+                colour = 'r'; % if artifact
+            else
+                colour = 'b'; % if not artefac
+            end
+
+            %Figure sizing
+            if strcmpi(options.figSize,'small')
+                sz = [560, 420]; % figure size
+                popPos = [345, 185, 140, 50];
+                popFont = 9;
+                compPos = [115, 400, 100, 20];
+                compFont = 12;
+                varPos =  [340, 397, 150, 20];
+                varFont = 9;
+            elseif strcmpi(options.figSize,'medium')
+                sz = [900, 600]; % figure size
+                popPos = [560, 260, 210, 75];
+                popFont = 14;
+                compPos = [190, 565, 150, 30];
+                compFont = 18;
+                varPos =  [550, 560, 240, 30];
+                varFont = 14;
+            elseif strcmpi(options.figSize,'large')
+                sz = [1200, 900]; % figure size
+                popPos = [750, 400, 280, 100];
+                popFont = 18;
+                compPos = [250, 855, 200, 40];
+                compFont = 24;
+                varPos =  [740, 850, 300, 40];
+                varFont = 18;
+            end
+
+            screensize = get(0,'ScreenSize');
+            xpos = ceil((screensize(3)-sz(1))/2); % center figure horizontally
+            ypos = ceil((screensize(4)-sz(2))/2); % center figure vertically
+
+            f = figure('KeyPressFcn',@(obj,evt) 0);
+            f.Position = [xpos ypos sz(1) sz(2)];
+            f.Name = 'Press enter when selection is made.';
+            f.NumberTitle = 'off';
+
+            %Plot time course
+            subplot(2,2,1);
+            plot(EEG.times,mean(temp,2),colour); grid on; hold on;
+            plot([0 0], get(gca,'ylim'),'r--');
+            set(gca,'Xlim', [options.plotTimeX(1,1), options.plotTimeX(1,2)]);
+            xlabel('Time (ms)');
+            ylabel('Amplitude (a.u.)');
+
+            %Plot topoplot
+            subplot(2,2,2);
+            topoplot(EEG.icawinv(:,compNum),EEG.chanlocs,'electrodes','off');
+            colorbar;
+
+            %Plot time course matrix
+            [val1,tp1] = min(abs(EEG.times-options.plotTimeX(1,1)));
+            [val2,tp2] = min(abs(EEG.times-options.plotTimeX(1,2)));
+            temp1 = temp(tp1:tp2,:);
+            subplot(2,2,3);
+            imagesc(temp1','XData', options.plotTimeX);
+            caxis([-max(abs(temp1(:))), max(abs(temp1(:)))]);
+            xlabel('Time (ms)');
+            ylabel('Trials');
+
+            subplot(2,2,4);
+            plot(freq,Y2,colour);grid on;
+            set(gca,'Xlim', options.plotFreqX);
+            xlabel('Time (ms)');
+            ylabel('Power (\muV/Hz)');
+
+            %Plot popup window
+            popup = uicontrol('Style', 'popup',...
+                'String', {'Neural','TMS-evoked muscle','Eye','Muscle','Electrode noise','Sensory','Other'},...
+                'Position', popPos,...
+                'Value',compVal,...
+                'fontSize',popFont); 
+
+            %Plot component number
+            hT = uicontrol('style', 'text',... 
+                'string', ['IC ', num2str(compNum), ' of ', num2str(size(EEG.icaweights,1))],... 
+                'position', compPos,...
+                'BackgroundColor',f.Color,...
+                'fontWeight','bold',...
+                'fontSize',compFont);
+
+            %Variance info
+            hT2 = uicontrol('style', 'text',... 
+                'string', ['Var. accounted for: ', num2str(round(varsPerc(1,compNum),1)),' %'],... 
+                'position', varPos,...
+                'BackgroundColor',f.Color,...
+                'fontSize',varFont);
+
+            waitfor(gcf,'CurrentCharacter');
+            curChar=uint8(get(gcf,'CurrentCharacter'));
+
+            output = popup.Value;
         else
-            colour = 'b'; % if not artefac
+            output = compVal;
         end
-
-        %Figure sizing
-        if strcmpi(options.figSize,'small')
-            sz = [560, 420]; % figure size
-            popPos = [345, 185, 140, 50];
-            popFont = 9;
-            compPos = [115, 400, 100, 20];
-            compFont = 12;
-            varPos =  [340, 397, 150, 20];
-            varFont = 9;
-        elseif strcmpi(options.figSize,'medium')
-            sz = [900, 600]; % figure size
-            popPos = [560, 260, 210, 75];
-            popFont = 14;
-            compPos = [190, 565, 150, 30];
-            compFont = 18;
-            varPos =  [550, 560, 240, 30];
-            varFont = 14;
-        elseif strcmpi(options.figSize,'large')
-            sz = [1200, 900]; % figure size
-            popPos = [750, 400, 280, 100];
-            popFont = 18;
-            compPos = [250, 855, 200, 40];
-            compFont = 24;
-            varPos =  [740, 850, 300, 40];
-            varFont = 18;
-        end
-
-        screensize = get(0,'ScreenSize');
-        xpos = ceil((screensize(3)-sz(1))/2); % center figure horizontally
-        ypos = ceil((screensize(4)-sz(2))/2); % center figure vertically
-
-        f = figure('KeyPressFcn',@(obj,evt) 0);
-        f.Position = [xpos ypos sz(1) sz(2)];
-        f.Name = 'Press enter when selection is made.';
-        f.NumberTitle = 'off';
-
-        %Plot time course
-        subplot(2,2,1);
-        plot(EEG.times,mean(temp,2),colour); grid on; hold on;
-        plot([0 0], get(gca,'ylim'),'r--');
-        set(gca,'Xlim', [options.plotTimeX(1,1), options.plotTimeX(1,2)]);
-        xlabel('Time (ms)');
-        ylabel('Amplitude (a.u.)');
-
-        %Plot topoplot
-        subplot(2,2,2);
-        topoplot(EEG.icawinv(:,compNum),EEG.chanlocs,'electrodes','off');
-        colorbar;
-
-        %Plot time course matrix
-        [val1,tp1] = min(abs(EEG.times-options.plotTimeX(1,1)));
-        [val2,tp2] = min(abs(EEG.times-options.plotTimeX(1,2)));
-        temp1 = temp(tp1:tp2,:);
-        subplot(2,2,3);
-        imagesc(temp1','XData', options.plotTimeX);
-        caxis([-max(abs(temp1(:))), max(abs(temp1(:)))]);
-        xlabel('Time (ms)');
-        ylabel('Trials');
-
-        subplot(2,2,4);
-        plot(freq,Y2,colour);grid on;
-        set(gca,'Xlim', options.plotFreqX);
-        xlabel('Time (ms)');
-        ylabel('Power (\muV/Hz)');
-
-        %Plot popup window
-        popup = uicontrol('Style', 'popup',...
-            'String', {'Neural','TMS-evoked muscle','Eye','Muscle','Electrode noise','Sensory','Other'},...
-            'Position', popPos,...
-            'Value',compVal,...
-            'fontSize',popFont); 
-
-        %Plot component number
-        hT = uicontrol('style', 'text',... 
-            'string', ['IC ', num2str(compNum), ' of ', num2str(size(EEG.icaweights,1))],... 
-            'position', compPos,...
-            'BackgroundColor',f.Color,...
-            'fontWeight','bold',...
-            'fontSize',compFont);
-
-        %Variance info
-        hT2 = uicontrol('style', 'text',... 
-            'string', ['Var. accounted for: ', num2str(round(varsPerc(1,compNum),1)),' %'],... 
-            'position', varPos,...
-            'BackgroundColor',f.Color,...
-            'fontSize',varFont);
-
-        waitfor(gcf,'CurrentCharacter');
-        curChar=uint8(get(gcf,'CurrentCharacter'));
-
-        output = popup.Value;
 
         %Save components for removal
         if output == 2
@@ -657,43 +664,46 @@ function EEG = tesa_compselect( EEG , varargin )
     removeComps = [EEG.(nameIn).tmsMuscle, EEG.(nameIn).eye, EEG.(nameIn).muscle, EEG.(nameIn).electrodeNoise, EEG.(nameIn).sensory, EEG.(nameIn).other];
     EEG = pop_subcomp( EEG,removeComps, 0);
 
-    %Plot check
-    f1 = figure('KeyPressFcn',@(obj,evt) 0);
-    f1.Name = 'Press enter when ready to continue.';
-    f1.NumberTitle = 'off';
-    
-    subplot(1,2,1)
-    plot(EEG.times,pre,'b'); grid on; hold on;
-    plot([0 0], get(gca,'ylim'),'r--');
-    set(gca,'Xlim', options.plotTimeX);
-    xlabel('Time (ms)');
-    ylabel('Amplitude (\muV)');
-    title('Before correction','fontweight','bold');
-    yScale = get(gca,'ylim');
+    if strcmp(options.compCheck,'on')
+        %Plot check
+        f1 = figure('KeyPressFcn',@(obj,evt) 0);
+        f1.Name = 'Press enter when ready to continue.';
+        f1.NumberTitle = 'off';
 
-    subplot(1,2,2)
-    plot(EEG.times,mean(EEG.data,3),'b'); grid on; hold on;
-    plot([0 0], yScale,'r--');
-    set(gca,'Xlim', options.plotTimeX,'ylim',yScale);
-    xlabel('Time (ms)');
-    ylabel('Amplitude (\muV)');
-    title('After correction','fontweight','bold');
-    
-    waitfor(gcf,'CurrentCharacter');
-    curChar=uint8(get(gcf,'CurrentCharacter'));
+        subplot(1,2,1)
+        plot(EEG.times,pre,'b'); grid on; hold on;
+        plot([0 0], get(gca,'ylim'),'r--');
+        set(gca,'Xlim', options.plotTimeX);
+        xlabel('Time (ms)');
+        ylabel('Amplitude (\muV)');
+        title('Before correction','fontweight','bold');
+        yScale = get(gca,'ylim');
 
-    %Check if happy to continue
-    ButtonName = questdlg('Are you satisfied with component removal?', 'Verify component removal', 'No-Redo', 'Yes', 'Cancel', 'Yes');
-    switch ButtonName,
-        case 'No-Redo',
-            redo = true; EEG = EEG1;
-        case 'Yes',
-            redo = false; 
-        case 'Cancel',
-            redo = false; error('Script termninated by user.');
-    end 
+        subplot(1,2,2)
+        plot(EEG.times,mean(EEG.data,3),'b'); grid on; hold on;
+        plot([0 0], yScale,'r--');
+        set(gca,'Xlim', options.plotTimeX,'ylim',yScale);
+        xlabel('Time (ms)');
+        ylabel('Amplitude (\muV)');
+        title('After correction','fontweight','bold');
 
-    close;
+        waitfor(gcf,'CurrentCharacter');
+        curChar=uint8(get(gcf,'CurrentCharacter'));
 
+        %Check if happy to continue
+        ButtonName = questdlg('Are you satisfied with component removal?', 'Verify component removal', 'No-Redo', 'Yes', 'Cancel', 'Yes');
+        switch ButtonName,
+            case 'No-Redo',
+                redo = true; EEG = EEG1;
+            case 'Yes',
+                redo = false; 
+            case 'Cancel',
+                redo = false; error('Script termninated by user.');
+        end 
+
+        close;
+    else
+        redo = false;
     end
+              
 end
