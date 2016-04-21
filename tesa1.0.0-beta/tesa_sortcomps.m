@@ -1,8 +1,8 @@
 % tesa_sortcomps()      - sorts ICA components by percentage variance explained by
 %                           each time course. Use this to help identify
 %                           muscle/decay artefacts using pop_selectcomps.
-
-
+% 
+% 
 %                           Note that this was designed primarily for fastica which
 %                           does not sort components. Infomax ICA
 %                           algorithms already sort components so this will be of limited use. 
@@ -22,7 +22,7 @@
 % See also:
 %   tesa_autocompselect 
 
-% Copyright (C) 2015  Nigel Rogasch, Monash University,
+% Copyright (C) 2016  Nigel Rogasch, Monash University,
 % nigel.rogasch@monash.edu
 %
 % This program is free software; you can redistribute it and/or modify
