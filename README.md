@@ -11,8 +11,8 @@ To download TESA, press the 'Download Zip' button located further up the page or
 Users familiar with github can also pull the repository. Please create your own fork.
 
 ##TESA user manual
-A detailed description on how to use TESA is available in the TESA user manual which can be accessed via gitbooks: 
-
+A detailed description on how to use TESA is available in the TESA user manual, which can be accessed via gitbooks: 
+[https://www.gitbook.com/book/nigelrogasch/tesa-user-manual/details](https://www.gitbook.com/book/nigelrogasch/tesa-user-manual/details)
 
 The user manual is available online or can be download in pdf, epub and mobi formats. 
 
