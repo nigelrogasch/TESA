@@ -5,6 +5,7 @@ The current release is a beta version and is still undergoing testing.
 
 ##Downloading TESA
 To download TESA, press the 'Download Zip' button located further up the page or by visiting the following home site:
+[http://nigelrogasch.github.io/TESA/](http://nigelrogasch.github.io/TESA/)
 
 
 Users familiar with github can also pull the repository. Please create your own fork.
