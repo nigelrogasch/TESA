@@ -17,7 +17,7 @@ A detailed description on how to use TESA is available in the TESA user manual, 
 The user manual is available online or can be download in pdf, epub and mobi formats. 
 
 ##Example data and scripts
-Some example scripts and example data for trialing TESA are available from figShare:
+Some example scripts and example data for trialing TESA are available from figshare:
 [https://figshare.com/articles/TESA_example_data_and_scripts/3188800](https://figshare.com/articles/TESA_example_data_and_scripts/3188800)
 
 
