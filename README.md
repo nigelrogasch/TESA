@@ -4,20 +4,20 @@ The TMS-EEG signal analyser (TESA) is an open source extension for [EEGLAB](http
 The current release is a beta version and is still undergoing testing.
 
 ##Downloading TESA
-To download TESA, press the 'Download ZIP' button located further up the page or by visiting the following home site:
+To download TESA, press the 'Download ZIP' button located further up the page or visit the following home site:
 [http://nigelrogasch.github.io/TESA/](http://nigelrogasch.github.io/TESA/)
 
 
 Users familiar with github can also pull the repository. Please create your own fork.
 
 ##TESA user manual
-A detailed description on how to use TESA is available in the TESA user manual, which can be accessed via gitbooks: 
+A detailed description on how to use TESA is available in the TESA user manual on gitbooks: 
 [https://www.gitbook.com/book/nigelrogasch/tesa-user-manual/details](https://www.gitbook.com/book/nigelrogasch/tesa-user-manual/details)
 
 The user manual is available online or can be download in pdf, epub and mobi formats. 
 
 ##Example data and scripts
-Some example scripts and example data for trialing TESA are available from figshare:
+Some example scripts and example data for trialling TESA are available from figshare:
 [https://figshare.com/articles/TESA_example_data_and_scripts/3188800](https://figshare.com/articles/TESA_example_data_and_scripts/3188800)
 
 
@@ -26,7 +26,7 @@ If you use this software, please read and cite the following open access journal
 * Paper coming soon.
 
 ##Comments and bugs
-Any bugs or suggestions for improving TESA are greatly appreciated, and can be made via the [issues](https://github.com/BMHLab/TESA/issues) tab.
+Any suggestions for improving TESA or bug reports are greatly appreciated, and can be made via the [issues](https://github.com/BMHLab/TESA/issues) tab.
 
 ##Contributing to TESA
 Developing methods for cleaning and analysing TMS-EEG data is an active area of research. Users are welcome to submit new functions to be included in TESA by contacting [Nigel Rogasch](<mailto:nigel.rogasch@gmail.com>).
