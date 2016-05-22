@@ -600,8 +600,8 @@ function EEG = tesa_compselect( EEG , varargin )
             subplot(2,2,4);
             plot(freq,Y2,colour);grid on;
             set(gca,'Xlim', options.plotFreqX);
-            xlabel('Time (ms)');
-            ylabel('Power (\muV/Hz)');
+            xlabel('Frequency (Hz)');
+            ylabel('Power (\muV^{2}/Hz)');
 
             %Plot popup window
             popup = uicontrol('Style', 'popup',...

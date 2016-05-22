@@ -135,6 +135,14 @@ end
 %Get information from other files
 fileInfo = dir([EEG.filepath,filesep,'*.set']);
 
+%Sort the file names by numerical markers
+names = {fileInfo.name};
+maxlen = max(cellfun(@length, names));
+padname = @(s) sprintf(['%0' num2str(maxlen) 's'], s);
+namesPadded = cellfun(padname, names, 'UniformOutput', false);
+[~, sortOrder] = sort(namesPadded);
+fileInfo = fileInfo(sortOrder);
+
 fileNames = [];
 for x = 1:size(fileInfo,1)
     fileNames{x,1} = fileInfo(x).name;
