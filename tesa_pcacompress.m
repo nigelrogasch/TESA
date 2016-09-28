@@ -1,7 +1,7 @@
 % tesa_pcacompress()    - Compresses data to n-dimensions as advocated in
 %                           the following papers:
 %
-%                           Korhonen, hernandez-pavon et al (2011) Removal of large muscle artifacts 
+%                           Korhonen, Hernandez-pavon et al (2011) Removal of large muscle artifacts 
 %                           from transcranial magnetic stimulation-evoked EEG 
 %                           by independent component analysis. Med Biol Eng
 %                           Compt, 49:397-407.
@@ -97,10 +97,15 @@ end
 inMat=reshape(EEG.data,size(EEG.data,1),[],1);
 
 %Checks that number of dimensions is larger than compression value
-rankMat = rank(inMat);
+covarianceMatrix = cov(inMat', 1);
+[E, D] = eig (covarianceMatrix);
+rankTolerance = 1e-7;
+rankMat = sum (diag (D) > rankTolerance);
+
 if rankMat <= options.compVal
     error('Dimension of data (%d) is lower than the compression value (%d). Function terminated.', rankMat, options.compVal);
 end
+
 
 %Runs singular value decomposition
 [U,S,V]=svd(inMat*inMat');
