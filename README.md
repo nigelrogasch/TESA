@@ -17,9 +17,10 @@ A detailed description on how to use TESA is available in the TESA user manual o
 The user manual is available online or can be download in pdf, epub and mobi formats. 
 
 ##Example data and scripts
-Some example scripts and example data for trialling TESA are available from figshare:
+Some example data for trialling TESA are available from figshare:
 [https://figshare.com/articles/TESA_example_data_and_scripts/3188800](https://figshare.com/articles/TESA_example_data_and_scripts/3188800)
 
+An example script demonstrating a TMS-EEG analysis pipeline using TESA is available in the toolbox: *example_script_from_manual.m*
 
 ##Citations and acknowledgements
 If you use this software, please read and cite the following open access journal article:
