@@ -32,5 +32,5 @@ Any suggestions for improving TESA or bug reports are greatly appreciated, and c
 ##Contributing to TESA
 Developing methods for cleaning and analysing TMS-EEG data is an active area of research. Users are welcome to submit new functions to be included in TESA by contacting [Nigel Rogasch](<mailto:nigel.rogasch@gmail.com>).
 
-##Current contributors
+##Code contributors
 Nigel C. Rogasch, Julio C. Hernandez-Pavon, Caley Sullivan, Nathan Rose 
