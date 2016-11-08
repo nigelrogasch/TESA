@@ -28,7 +28,7 @@
 
 function vers = eegplugin_tesa(fig, try_strings, catch_strings)
 
-    vers = 'tesa1.0';
+    vers = 'tesa1.0.1';
     if nargin < 3
         error('eegplugin_tesa requires 3 arguments');
     end
