@@ -1,0 +1,8 @@
+title: TESA
+description: TMS-EEG signal analyser (TESA) code repository
+google_analytics: 
+show_downloads: true
+theme: jekyll-theme-slate
+
+gems:
+  - jekyll-mentions
