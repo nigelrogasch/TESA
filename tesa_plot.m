@@ -158,7 +158,7 @@ if ~isempty(options.tepName)
             error('''tepName'' ''%s'' does not exist for tepType ROI. Please revise.',options.tepName);
         end
     elseif strcmp(options.tepType,'GMFA')
-        if ~isfield(EEG,'ROI')
+        if ~isfield(EEG,'GMFA')
             error('There is no GMFA analysis present in the data. Please run tesa_tepextract.')
         elseif ~isfield(EEG.GMFA,options.tepName)
             error('''tepName'' ''%s'' does not exist for tepType GMFA. Please revise.',options.tepName);
