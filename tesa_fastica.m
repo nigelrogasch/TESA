@@ -98,7 +98,7 @@ for pair = reshape(varargin,2,[]) % pair is {propName;propValue}
    end
 end
 
-%Checks inputs
+% Checks inputs
 if ~(strcmp(options.approach,'symm') || strcmp(options.approach,'defl'))
     error('Input for ''approach'' must be either ''symm'' or ''defl''. Input type ''symm'' is recommended for TMS-EEG. See help for further details.');
 elseif ~(strcmp(options.g,'tanh') || strcmp(options.g,'gauss') || strcmp(options.g,'pow3') || strcmp(options.g,'skew'))
@@ -107,6 +107,20 @@ elseif ~(strcmp(options.stabilization,'on') || strcmp(options.stabilization,'off
     error('Input for ''stabilization'' must be either ''on'' or ''off''.')
 end
 
+% Save random number generator settings and date/time
+tmpfield = fieldnames(EEG);
+tmplog = strncmp('fastica',tmpfield,7);
+tmpfastica = tmpfield(tmplog);
+if isempty(tmpfastica)
+    EEG.fastica1.rng = rng;
+    EEG.fastica1.date = datetime('now');
+else
+    tmpname = ['fastica',num2str(length(tmpfastica)+1)];
+    EEG.(tmpname).rng = rng;
+    EEG.(tmpname).date = datetime('now');
+end
+
+% Run FastICA using EEGLAB pop_runica
 EEG = pop_runica(EEG,'icatype','fastica', 'approach', options.approach, 'g', options.g,'stabilization',options.stabilization);
 
 %display message
