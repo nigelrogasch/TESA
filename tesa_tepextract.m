@@ -82,6 +82,9 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+% Change log:
+% 19.12.2018: Fixed error in extracting channel labels
+
 function EEG = tesa_tepextract( EEG, type, varargin )
 
 if nargin < 2
@@ -147,8 +150,9 @@ if strcmp(type,'ROI')
     end
 
     %Extract electrodes to be averaged
-    e = struct2cell(EEG.chanlocs);
-    elec = squeeze(e(1,1,:));
+%     e = struct2cell(EEG.chanlocs);
+%     elec1 = squeeze(e(1,1,:));
+    elec = {EEG.chanlocs.labels}';
 
     if strcmp(options.elecs{1,1}, 'all')
         timeSeries = EEG.data;

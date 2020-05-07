@@ -69,6 +69,9 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+% Change log
+% 13.6.2018 - Included rank and sort of components with tesa_sortcomps
+
 function EEG = tesa_fastica( EEG, varargin )
 
 if nargin < 1
@@ -122,6 +125,9 @@ end
 
 % Run FastICA using EEGLAB pop_runica
 EEG = pop_runica(EEG,'icatype','fastica', 'approach', options.approach, 'g', options.g,'stabilization',options.stabilization);
+
+% Ranks and sorts components
+EEG = tesa_sortcomps(EEG);
 
 %display message
 fprintf('FastICA performed on data using ''%s'' approach and ''%s'' contrast function.\n',options.approach,options.g);

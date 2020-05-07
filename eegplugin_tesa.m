@@ -28,7 +28,7 @@
 
 function vers = eegplugin_tesa(fig, try_strings, catch_strings)
 
-    vers = 'tesa1.0.2';
+    vers = 'tesa1.1.0';
     if nargin < 3
         error('eegplugin_tesa requires 3 arguments');
     end
@@ -46,6 +46,7 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     cominterpdata = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_interpdata(EEG);' catch_strings.new_and_hist];
     comfastica = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_fastica(EEG);' catch_strings.new_and_hist];
     comcompselect = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_compselect(EEG);' catch_strings.new_and_hist];
+    comcompplot = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_compplot(EEG);' catch_strings.new_and_hist];
     comedm = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_edm(EEG);' catch_strings.new_and_hist];
     compcacompress = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_pcacompress(EEG);' catch_strings.new_and_hist];
     compcasuppress = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_pcasuppress(EEG);' catch_strings.new_and_hist];
@@ -68,7 +69,8 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     uimenu( submenu, 'Label', 'Remove artifact data'  , 'CallBack', comremovedata, 'separator', 'on');
     uimenu( submenu, 'Label', 'Interpolate removed data'  , 'CallBack', cominterpdata);
     uimenu( submenu, 'Label', 'FastICA'  , 'CallBack', comfastica, 'separator', 'on' );
-    uimenu( submenu, 'Label', 'Auto component selection'  , 'CallBack', comcompselect);
+    uimenu( submenu, 'Label', 'Component classification (TESA)'  , 'CallBack', comcompselect);
+    uimenu( submenu, 'Label', 'Plot and remove components'  , 'CallBack', comcompplot);
     uimenu( submenu, 'Label', 'Enhanced deflation method (EDM)'  , 'CallBack', comedm);
     uimenu( submenu, 'Label', 'PCA compression'  , 'CallBack', compcacompress);
     uimenu( submenu, 'Label', 'PCA suppression'  , 'CallBack', compcasuppress);

@@ -1,21 +1,21 @@
-% tesa_compselect() - sorts components following ICA by time course
-%                   variance, applies a series of rules (determined by the
-%                   user) to classify components as artifacts or neural
-%                   activity, presents the components one-by-one for manual
+% tesa_compselect() - applies a series of rules (determined by the
+%                   user) to classify components as artifacts, presents the 
+%                   components one-by-one for manual
 %                   clarification and then removes components selected as
 %                   artifacts from the data. During the clarification step,
 %                   users can re-classify components using a drop down
-%                   menu. When satisfied, press enter (or any other button) to 
+%                   menu. When satisfied, press the 'Next' button to 
 %                   continue to the next component. Components are classified as one of the
-%                   following: neural, TMS-evoked muscle, eye, muscle,
-%                   electrode noise, sensory or other. If a component is selected
+%                   following: keep, reject, reject - TMS-evoked muscle, reject - blink, 
+%                   reject - eye movement, reject - muscle, reject - 
+%                   electrode noise, or reject - sensory . If a component is selected
 %                   as an artifact using a rule, it is plotted as red, if
-%                   neural it is plotted as blue. Following removal, a before and
+%                   not it is plotted as blue. Following removal, a before and
 %                   after plot is generated and users can select whether to
 %                   continue or repeat the process. Component numbers and
 %                   variance represented by each component selected for
 %                   removal is stored in the EEG structure =>
-%                   EEG.icaBadComp.
+%                   EEG.icaCompClassTesaX.
 % 
 %                   Users are encouraged to report the settings used with
 %                   this function in any publications.
@@ -32,7 +32,13 @@
 %                   Rogasch NC et al. (2014) Removing artefacts from TMS-EEG 
 %                   recordings using independent component analysis: Importance 
 %                   for assessing prefrontal and motor cortex network
-%                   properties. NeuroImage, 101:425-439               
+%                   properties. NeuroImage, 101:425-439
+%                   
+%                   and
+% 
+%                   Rogasch NC et al. (2014) Analysing concurrent transcranial magnetic stimulation and
+%                   electroencephalographic data: A review and introduction to the open-source
+%                   TESA software. NeuroImage, 147:934–951               
 %
 % Usage:
 %   >>  EEG = tesa_compselect( EEG );
@@ -45,10 +51,14 @@
 %   'compCheck','str' - 'on' | 'off'. Turns on or off the component plots
 %                   for checking automated component selection. On is highly recommended. 
 %                   Default: 'on'
-%   'comps',int     - int is an integer describing the number of components
-%                   to perform selection on (e.g. first 10 components).
-%                   Leave empty for all components. 
-%                   Default: []
+%   'remove','str'  - 'on' | 'off'. Turns on or off removal of components
+%                   after classification
+%                   Default: 'on'
+%   'saveWeights','str' - 'on' | 'off'. Saves the winv (topoplot weights)
+%                   and icaact (time course weights) that the
+%                   classification was performed on. Note this will
+%                   increase the storage size of the files.
+%                   Default: 'off'
 %   'figSize','str' - 'small' | 'medium' | 'large'; Determines the size of
 %                   the figures that are plotted displaying the information
 %                   on the components.
@@ -59,6 +69,9 @@
 %   'plotFreqX',[low,high] - vector with integers for plotting the
 %                   frequency distribution of components (in Hz)
 %                   Default: [1,100]
+%   'freqScale','str' - 'raw' | 'log' | 'log10' | 'db'
+%                   y-axis scaling for the frequency plots
+%                   Default: 'log'
 % 
 % Optional input pairs for detecting artifact components (varargin):
 %   
@@ -80,7 +93,7 @@
 %                   Default: [11,30]
 %   'tmsMuscleFeedback','str' - 'on' | 'off'. String turning on feedback
 %                   of TMS-evoked muscle threshold value for each component
-%                   in the command window.
+%                   in a figure.
 %                   (Useful for determining a suitable threshold).
 %                   Default: 'off'
 % 
@@ -100,7 +113,7 @@
 %                   best for this purpose.
 %                   Default: {'Fp1','Fp2'}
 %   'blinkFeedback','str' - 'on' | 'off'. String turning on feedback
-%                   of blink detection threshold value for each component in the command window.
+%                   of blink detection threshold value for each component in a figure.
 %                   (Useful for determining a suitable threshold).
 %                   Default: 'off'
 % 
@@ -122,32 +135,52 @@
 %                   Default: {'F7','F8'}
 %   'moveFeedback','str' - 'on' | 'off'. String turning on feedback
 %                   of movement detection threshold value for each
-%                   component in the command window.
+%                   component in a figure.
 %                   (Useful for determining a suitable threshold).
 %                   Default: 'off'
 %
 %   Persistent muscle activity
-%   This type of artifact is detected by comparing the mean power of the 
-%   component time course frequency distribution between a target window
-%   and the mean across all frequencies(calculated using an FFT across all trials). 
-%   A threhold is set by the user for detection (e.g. 0.6 means the high frequency 
-%   power is 60% of the total power). 
+%   This type of artifact is detected by calculating the slope of the line 
+%   of best fit between the log EEG power and the log frequency. See the 
+%   following manuscript for details:
+%
+%   Fitzgibbon SP et al. (2016) Automatic determination of EMG-contaminated 
+%   components and validation of independent component analysis using EEG during
+%   pharmacologic paralysis. Clinical Neurophysiology 127:1781-1793
+% 
 %   Components are stored under muscle.
 %   'muscle','str' - 'on' | 'off'. A string which turns on muscle detection. 
 %                   Default: 'on'
 %   'muscleThresh',int - An integer determining the threshold for
 %                   detecting components representing muscle activity.
-%                   Default: 0.6
-%   'muscleFreqWin',[int,int] - a vector with the frequencies for the target w
-%                   window(in Hz).
-%                   Default: [31,100] - Note the default higher value will
-%                   adjust to match the maximum plot frequency defined by
-%                   'plotFreqX'.
+%                   Default: -0.31
+%   'muscleFreqIn',[int,int] - a vector with the frequency limits for
+%                   including in the slope analysis. Leave empty to include
+%                   all of the frequency spectra. [7,70] is recommended.
+%                   Default: []
+%   'muscleFreqEx',[int,int] - a vector with frequencies to exclude (e.g
+%                   due to line noise. Leave empty to include all of the
+%                   frequency spectra.
+%                   Example: [48,52] % Exclude 50 Hz line noise
+%                   Default: [];
 %   'muslceFeedback','str' - 'on' | 'off'. String turning on feedback
 %                   of muscle detection threshold value for each component
-%                   in the command window.
+%                   in a figure.
 %                   (Useful for determining a suitable threshold).
 %                   Default: 'off'
+%
+%   Note that the legacy TESA heuristic for detecting persitent muscle
+%   activity can still be called from the command line. The two following
+%   arguments must be called with the tesa_compselect function:
+%   'muscleLegacy','str' - 'on' | 'off'. Call this key/value pair to turn
+%                   on TESA legacy heuristic (e.g. comparing the mean
+%                   values between a target window and the remaining
+%                   window using a ratio)
+%                   Default: 'off'
+%   'muscleFreqWin',[int,int] - a vector with the frequencies for the target w
+%                   window(in Hz).
+%                   Example: [30,100]
+%                   Default: [] 
 % 
 %   Electrode noise
 %   This type of artifact is detected by comparing z scores in individual 
@@ -161,11 +194,11 @@
 %                   Default: 4
 %   'elecNoiseFeedback','str' - 'on' | 'off'. String turning on feedback
 %                   of electrode noise detection threshold value for each component
-%                   in the command window.
+%                   in a figure.
 %                   (Useful for determining a suitable threshold).
 %                   Default: 'off'
 % 
-%   Note that a sensory and other category are also available in the dropdown menu.
+%   Note that a sensory category is also available in the dropdown menu.
 %   There are currently no specific rules suitable for accurately detecting
 %   these components and are therefore classified entirely at the user's discretion.
 % 
@@ -174,7 +207,7 @@
 % 
 % Examples
 %   EEG = tesa_compselect( EEG ); % default use
-%   EEG = tesa_compselect( EEG, 'comps', 10, 'figSize', 'medium','plotTimeX',[-600,600], 'plotFreqX', [2,45] ); % changes the number of components to select, the size of the figure and the x axis' of the time course and frequency plots.
+%   EEG = tesa_compselect( EEG, 'figSize', 'medium','plotTimeX',[-600,600], 'plotFreqX', [2,45] ); % changes the number of components to select, the size of the figure and the x axis' of the time course and frequency plots.
 %   EEG = tesa_compselect( EEG, 'elecNoise','off','blinkThresh',3,'blinkElecs',{'AF3','AF4'},'blinkFeedback','on'); % turn off electrode noise detection, change threshold for blinks to 3, change electrodes used to AF3 and AF4 and turn on the feedback of blink threhsolds for  individual components in the command window.
 % 
 % See also:
@@ -197,6 +230,24 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+% Change log
+% 13.6.2018 - removed sort components step (added directly to tesa_fastica)
+% 13.6.2018 - removed plotting function and replaced with tesa_compplot
+% 13.6.2018 - changed the way component classifications are stored. Now stored in EEG.icaCompClassTesaX
+% 13.6.2018 - feedback on classification thresholds is now provided as a
+%               figure as opposed to on the command line
+% 13.6.2018 - changed the classification categories to 'keep' and 'reject' categories
+% 14.6.2018 - included 'remove' input to determine whether to classify
+%               components ('off'), or classify and remove components ('on')
+% 22.3.2019 - Changed the method for calculating the power spectrum to
+%               pwelch
+% 10.4.2019 - Added an option to choose y-axis frequency scale
+% 11.4.2019 - Changed the heuristic rule for detecting persistent muscle
+%               activity to the slope of the line of best fit on the
+%               log-log of the frequency spectra data (see Fitzgibbon et al
+%               2016 Clin Neurophysiology). Note that the legacy TESA
+%               muscle heuristic can still be called from the command line
+
 function EEG = tesa_compselect( EEG , varargin )
    
     if nargin < 1
@@ -204,10 +255,10 @@ function EEG = tesa_compselect( EEG , varargin )
     end
 
     %define defaults
-    options = struct('compCheck','on','comps',[], 'figSize','small','plotTimeX',[],'plotFreqX',[],'tmsMuscle','on','tmsMuscleThresh',[],...
-        'tmsMuscleWin',[],'tmsMuscleFeedback','off','blink','on','blinkThresh',[],'blinkElecs',[],...
-        'blinkFeedback','off','move','on','moveThresh',[],'moveElecs',[],'moveFeedback','off','muscle','on','muscleThresh',[],...
-        'muscleFreqWin',[],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',[],'elecNoiseFeedback','off');
+    options = struct('compCheck','on','comps',[], 'remove','on','saveWeights','off','figSize','medium','plotTimeX',[],'plotFreqX',[],'freqScale',[],...
+        'tmsMuscle','on','tmsMuscleThresh',[],'tmsMuscleWin',[],'tmsMuscleFeedback','off','blink','on','blinkThresh',[],'blinkElecs',[],...
+        'blinkFeedback','off','move','on','moveThresh',[],'moveElecs',[],'moveFeedback','off','muscle','on','muscleThresh',[],'muscleLegacy','off',...
+        'muscleFreqWin',[],'muscleFreqIn',[],'muscleFreqEx',[],'muscleFeedback','off','elecNoise','on','elecNoiseThresh',[],'elecNoiseFeedback','off');
 
     % read the acceptable names
     optionNames = fieldnames(options);
@@ -215,7 +266,7 @@ function EEG = tesa_compselect( EEG , varargin )
     % count arguments
     nArgs = length(varargin);
     if round(nArgs/2)~=nArgs/2
-       error('EXAMPLE needs key/value pairs')
+       error('tesa_compselect needs key/value pairs')
     end
 
     for pair = reshape(varargin,2,[]) % pair is {propName;propValue}
@@ -234,6 +285,9 @@ function EEG = tesa_compselect( EEG , varargin )
     end
     if isempty(options.plotFreqX)
         options.plotFreqX = [1,100];
+    end
+    if isempty(options.freqScale)
+        options.freqScale = 'log';
     end
     if isempty(options.tmsMuscleThresh)
         options.tmsMuscleThresh = 8;
@@ -254,9 +308,9 @@ function EEG = tesa_compselect( EEG , varargin )
         options.moveElecs = {'F7','F8'};
     end
     if isempty(options.muscleThresh)
-        options.muscleThresh = 0.6;
+        options.muscleThresh = -0.31;
     end
-     if isempty(options.elecNoiseThresh)
+    if isempty(options.elecNoiseThresh)
         options.elecNoiseThresh = 4;
     end
     
@@ -270,12 +324,12 @@ function EEG = tesa_compselect( EEG , varargin )
         error('Channel locations are required for this function. Please load channel locations: Edit -> Channel locations.')
     end
     
-    %Check comps input
-    if ~isempty(options.comps)
-        if size(EEG.icaweights,1) < options.comps
-            error('The number of components to choose from (%d) is more than the number of independent components in the data (%d).',options.comps,size(EEG.icaweights,1));
-        end
-    end
+%     %Check comps input
+%     if ~isempty(options.comps)
+%         if size(EEG.icaweights,1) < options.comps
+%             error('The number of components to choose from (%d) is more than the number of independent components in the data (%d).',options.comps,size(EEG.icaweights,1));
+%         end
+%     end
     
     %Check figure inputs
     if ~(strcmp(options.figSize,'small') | strcmp(options.figSize,'medium') | strcmp(options.figSize,'large'))
@@ -296,9 +350,14 @@ function EEG = tesa_compselect( EEG , varargin )
         error('Input for ''plotFreqX'' must be larger than 0.');
     end
     
-    %Set muscle windows based on plotFreqX
-    if isempty(options.muscleFreqWin)
-        options.muscleFreqWin = [30,options.plotFreqX(1,2)];
+%     %Set muscle windows based on plotFreqX
+%     if isempty(options.muscleFreqWin)
+%         options.muscleFreqWin = [30,options.plotFreqX(1,2)];
+%     end
+    
+    %Check frequency scaling inputs
+    if ~(strcmp(options.freqScale,'raw') | strcmp(options.freqScale,'log') | strcmp(options.freqScale,'log10') | strcmp(options.freqScale,'db'))
+        error ('Input for ''freqScale'' needs to be either ''raw'', ''log'', ''log10'' or ''db''.');
     end
     
     %Checks eye movement input, disables if both electrodes are not present.
@@ -329,75 +388,132 @@ function EEG = tesa_compselect( EEG , varargin )
 
     %Creates output storage name
     varsName = fieldnames(EEG);
-    varsNameLog = strncmp('icaBadComp',varsName,10);
+    varsNameLog = strcmp('icaCompClass',varsName);
     if sum(varsNameLog) == 0
-        nameIn = 'icaBadComp1';
+        EEG.icaCompClass = [];
+        nameIn = 'TESA1';
     else
-        nameIn = ['icaBadComp', num2str(sum(varsNameLog)+1)];
+        if isempty(EEG.icaCompClass)
+            EEG.icaCompClass = [];
+            nameIn = 'TESA1';
+        else
+            varsNameClass = fieldnames(EEG.icaCompClass);
+            varsNameClassLog = strncmp('TESA',varsNameClass,4);        
+            if sum(varsNameClassLog) == 0
+                nameIn = 'TESA1';
+            else 
+                nameIn = ['TESA', num2str(sum(varsNameClassLog)+1)];
+            end
+        end
     end
 
-    %Ranks components, outputs variance
-    [EEG, varsPerc] = tesa_sortcomps(EEG);
+    %Calculate component time series
+    if isempty(EEG.icaact)
+        fprintf('Calculating component time series\n')
+        EEG.icaact = (EEG.icaweights*EEG.icasphere)*EEG.data(EEG.icachansind,:);
+        EEG.icaact = reshape( EEG.icaact, size(EEG.icaact,1), EEG.pnts, EEG.trials);
+    end
 
-    %Calculates time course and variance
-    compTimeCourse = arrayfun(@(x)eeg_getdatact(EEG, 'component', [x], 'projchan', []),1:size(EEG.icawinv,2),'UniformOutput', false);
+    %Calculate component variance
+    fprintf('Calculating component variance\n')
+    for x = 1:size(EEG.icaact,1)
+        vars(x) = var(mean(EEG.icaact(x,:,:),3));
+    end
+    varsPerc = vars/sum(vars)*100;
     
-    global redo
-    redo = true;
+    fprintf('Calculating component power spectrum\n')
+    
+    % Calculate pwelch
+    %Resize EEG.icaact if required
+    if size(EEG.icaact,3) > 0
+        eegData = reshape(EEG.icaact,size(EEG.icaact,1),[]);
+    else
+        eegData = EEG.icaact;
+    end
+    [pxx,fp] = pwelch(eegData',size(eegData,2),[],size(eegData,2),EEG.srate);
+    FFTout = pxx';
+    fp = fp';
+    
+    % Calculate FFT bins
+    [c index]=min(abs(fp-(0.5)));
+    freq=options.plotFreqX(1,1):0.5:options.plotFreqX(1,2);
+    fftBins = zeros(size(FFTout,1),size(freq,2)); %preallocate
+    for a=1:size(freq,2)
+        [c, index1]=min(abs(fp-((freq(1,a)-0.25))));
+        [c, index2]=min(abs(fp-((freq(1,a)+0.25))));
+        fftBins(:,a)=mean(FFTout(:,index1:index2),2); %creates bins for 0.5 Hz in width centred around whole frequencies (i.e. 0.5, 1, 1.5 Hz etc)
+    end
 
-    while redo == true;
+%     % LEGACY APPROACH USING FFT
+%     %Calculates component power spectrum
+%     fprintf('Calculating component power spectrum\n')
+%     compNumMat = 1:size(EEG.icaact,1);
+%     for compNum = compNumMat
+%         %##########
+%         %Output the data
+% 
+%         %Calculates time course
+%         temp = EEG.icaact(compNum,:,:);
+%         temp = squeeze(temp(1,:,:));
+% 
+%         %Calculates FFT (uV/Hz)
+%         T = 1/EEG.srate;             % Sample time
+%         L = size(EEG.times,2);       % Length of signal
+%         NFFT = 2^nextpow2(L);        % Next power of 2 from length of y
+%         f = EEG.srate/2*linspace(0,1,NFFT/2+1); % Frequencies
+% 
+%         y = reshape(temp,1,[]);
+%         Y = fft(zscore(y),NFFT)/L;
+% 
+%         FFTout(compNum,:) = (abs(Y).^2); 
+%         [c index]=min(abs(f-(0.5)));
+% 
+%         freq=options.plotFreqX(1,1):0.5:options.plotFreqX(1,2);
+% 
+%         fftBins = zeros(size(FFTout,1),size(freq,2)); %preallocate
+% 
+%         for x = 1:size(FFTout,1)
+%             for a=1:size(freq,2)
+%                 [c, index1]=min(abs(f-((freq(1,a)-0.25))));
+%                 [c, index2]=min(abs(f-((freq(1,a)+0.25))));
+%                 fftBins(x,a)=mean(FFTout(x,index1:index2),2); %creates bins for 0.5 Hz in width centred around whole frequencies (i.e. 0.5, 1, 1.5 Hz etc)
+%             end
+%         end
+% 
+%     end
+    
+    % Generate array for component classification: 1 = keep; >1 = reject
+    EEG.icaCompClass.(nameIn).name = nameIn;
+    EEG.icaCompClass.(nameIn).compClass = ones(1,size(EEG.icawinv,2));
+    
+    %Creates output storage for components
+    EEG.icaCompClass.(nameIn).reject = []; %2
+    EEG.icaCompClass.(nameIn).rejectTmsMuscle = []; %3
+    EEG.icaCompClass.(nameIn).rejectBlink = []; %4
+    EEG.icaCompClass.(nameIn).rejectEyeMove = []; %5
+    EEG.icaCompClass.(nameIn).rejectMuscle = []; %6
+    EEG.icaCompClass.(nameIn).rejectElectrodeNoise = []; %7
+    EEG.icaCompClass.(nameIn).rejectSensory = []; %8
 
-        %Creates output storage for components
-        EEG.(nameIn).tmsMuscle = [];
-        EEG.(nameIn).eye = [];
-        EEG.(nameIn).muscle = [];
-        EEG.(nameIn).electrodeNoise = [];
-        EEG.(nameIn).sensory = [];
-        EEG.(nameIn).other = [];
+    EEG.icaCompClass.(nameIn).rejectVars = [];
+    EEG.icaCompClass.(nameIn).rejectTmsMuscleVars = [];
+    EEG.icaCompClass.(nameIn).rejectBlinkVars = [];
+    EEG.icaCompClass.(nameIn).rejectEyeMoveVars = [];
+    EEG.icaCompClass.(nameIn).rejectMuscleVars = [];
+    EEG.icaCompClass.(nameIn).rejectElectrodeNoiseVars = [];
+    EEG.icaCompClass.(nameIn).rejectSensoryVars= [];
 
-        EEG.(nameIn).tmsMuscleVars = [];
-        EEG.(nameIn).eyeVars = [];
-        EEG.(nameIn).muscleVars = [];
-        EEG.(nameIn).electrodeNoiseVars = [];
-        EEG.(nameIn).sensoryVars= [];
-        EEG.(nameIn).otherVars = [];
-
-        %Number of components to consider
-        if isempty(options.comps)
-            comps = size(EEG.icaweights,1);
-        else
-            comps = options.comps;
-        end
-
+    %Number of components to consider
+    if isempty(options.comps)
+        comps = size(EEG.icaweights,1);
+    else
+        warning('Input ''comps'' has been removed. Select ''Finish'' and hit ''Next'' to terminate IC selection');
+        comps = size(EEG.icaweights,1);
+    end
+    
+    fprintf('Classifying components\n');
+    
     for compNum =1:comps
-
-        %##########
-        %Output the data
-
-        %Calculates time course
-        temp = compTimeCourse{1,compNum};
-        temp = squeeze(temp(1,:,:));
-
-        %Calculates FFT (uV/Hz)
-        T = 1/EEG.srate;             % Sample time
-        L = size(EEG.times,2);       % Length of signal
-        NFFT = 2^nextpow2(L);        % Next power of 2 from length of y
-        f = EEG.srate/2*linspace(0,1,NFFT/2+1); % Frequencies
-
-        y = reshape(temp,1,[]);
-        Y = fft(zscore(y),NFFT)/L;
-
-        Yout = (abs(Y).^2); 
-        [c index]=min(abs(f-(0.5)));
-
-        for x = 1:size(Yout,1);
-            freq=options.plotFreqX(1,1):0.5:options.plotFreqX(1,2);
-            for a=1:size(freq,2);
-                [c index1]=min(abs(f-((freq(1,a)-0.25))));
-                [c index2]=min(abs(f-((freq(1,a)+0.25))));
-                Y2(x,a)=mean(Yout(x,index1:index2),2); %creates bins for 0.5 Hz in width centred around whole frequencies (i.e. 0.5, 1, 1.5 Hz etc)
-            end;
-        end;
 
         %##########
         %Checks which components fit profile of artifact
@@ -420,15 +536,12 @@ function EEG = tesa_compselect( EEG , varargin )
 
         [val1,mt1] = min(abs(EEG.times-options.tmsMuscleWin(1,1)));
         [val2,mt2] = min(abs(EEG.times-options.tmsMuscleWin(1,2)));
-        muscleScore = abs(mean(temp,2));
-        winScore = mean(muscleScore(mt1:mt2,:),1);
-        tmsMuscleRatio = winScore./mean(muscleScore);
-        if strcmpi(options.tmsMuscleFeedback,'on')
-            fprintf('Comp. %d TMS-evoked muscle ratio is %s.\n', compNum,num2str(round(tmsMuscleRatio,2)));
-        end
+        muscleScore = abs(mean(EEG.icaact(compNum,:,:),3));
+        winScore = mean(muscleScore(:,mt1:mt2),2);
+        tmsMuscleRatio(compNum) = winScore./mean(muscleScore);
+
 
         %Blink 
-
         e = struct2cell(EEG.chanlocs);
         elec = squeeze(e(1,1,:));
 
@@ -448,10 +561,7 @@ function EEG = tesa_compselect( EEG , varargin )
             end
         end
 
-        blinkRatio = mean(tempCompZ(eNum,:));
-        if strcmpi(options.blinkFeedback,'on')
-            fprintf('Comp. %d blink ratio is %s.\n', compNum,num2str(abs(round(blinkRatio,2))));
-        end
+        blinkRatio(compNum) = mean(tempCompZ(eNum,:));
 
         %Lateral eye movement
         if strcmpi(options.move,'on')
@@ -481,229 +591,292 @@ function EEG = tesa_compselect( EEG , varargin )
                 error('None of the electrodes selected to detect eye movements are present in the data.Please enter alternative electrodes using ''moveElecs'',{''elec1'',''elec2''}.');
             end
         end
-        moveVal = tempCompZ(eNum,:);
-        if strcmpi(options.moveFeedback,'on')
-            fprintf('Comp. %d eye movement values are %s and %s.\n', compNum,num2str(round(moveVal(1,1),2)),num2str(round(moveVal(2,1),2)));
-        end
+        moveVal(compNum,:) = tempCompZ(eNum,:);
 
         %Muscle
         if strcmpi(options.muscle,'on')
-
-            %Checks input for muscle
-            if size(options.muscleFreqWin,2) ~=2
-                error('Inputs for ''muscleFreqWin'' must be in the following format: [low, high]. e.g. [31,100].');
-            elseif (options.muscleFreqWin(1,1) < options.plotFreqX(1,1) | options.muscleFreqWin(1,2) > options.plotFreqX(1,2))
-                error('Inputs for ''muscleFreqWin'' (%d to %d) are outside of the frequency range set by input ''plotFreqX'' (%d to %d). Please adjust.',options.muscleFreqWin(1,1),options.muscleFreqWin(1,2),options.plotFreqX(1,1),options.plotFreqX(1,2));
+            
+            if strcmpi(options.muscleLegacy,'off') && ~isempty(options.muscleFreqWin)
+                warning('The heuristic TESA uses to detect persistent muscle activity has changed. Please see the user manual.');
             end
-        end
-
-        [val1,winF1] = min(abs(freq-options.muscleFreqWin(1,1)));
-        [val2,winF2] = min(abs(freq-options.muscleFreqWin(1,2)));
-        winFreq = mean(Y2(:,winF1:winF2),2);
-        allFreq = mean(Y2,2);
-        muscleRatio = winFreq./allFreq;
-        if strcmpi(options.muscleFeedback,'on')
-            fprintf('Comp. %d muscle ratio is %s.\n', compNum,num2str(abs(round(muscleRatio,2))));
+            
+            if strcmpi(options.muscleLegacy,'on')
+                if isempty(muscleFreqWin)
+                    error('To use the legacy muscle heuristic, please also define ''muscleFreqWin''.');
+                end
+                %Checks input for muscle
+                if size(options.muscleFreqWin,2) ~=2
+                    error('Inputs for ''muscleFreqWin'' must be in the following format: [low, high]. e.g. [31,100].');
+                elseif (options.muscleFreqWin(1,1) < options.plotFreqX(1,1) | options.muscleFreqWin(1,2) > options.plotFreqX(1,2))
+                    %                 error('Inputs for ''muscleFreqWin'' (%d to %d) are outside of the frequency range set by input ''plotFreqX'' (%d to %d). Please adjust.',options.muscleFreqWin(1,1),options.muscleFreqWin(1,2),options.plotFreqX(1,1),options.plotFreqX(1,2));
+                end
+                
+                [val1,winF1] = min(abs(freq-options.muscleFreqWin(1,1)));
+                [val2,winF2] = min(abs(freq-options.muscleFreqWin(1,2)));
+                winFreq = mean(fftBins(compNum,winF1:winF2),2);
+                allFreq = mean(fftBins(compNum,:),2);
+                muscleRatio(compNum) = winFreq./allFreq;
+            else
+                
+                %Checks input for muscle
+                if size(options.muscleFreqIn,2) ~=2
+                    error('Inputs for ''muscleFreqIn'' must be in the following format: [low, high]. e.g. [7,75].');
+%                 elseif (options.muscleFreqIn(1,1) < freq(1,1) | options.muscleFreqIn(1,2) > freq(1,end))
+%                     error('Inputs for ''muscleFreqIn'' (%d to %d) are outside of the frequency range (%d to %d). Please adjust.',options.muscleFreqIn(1,1),options.muscleFreqIn(1,2),freq(1,1),freq(1,end));
+                end
+%                 if size(options.muscleFreqEx,2) ~=2
+%                     error('Inputs for ''muscleFreqEx'' must be in the following format: [low, high]. e.g. [48,52].');
+%                 elseif (options.muscleFreqEx(1,1) < freq(1,1) | options.muscleFreqEx(1,2) > freq(1,end))
+%                     error('Inputs for ''muscleFreqEx'' (%d to %d) are outside of the frequency range (%d to %d). Please adjust.',options.muscleFreqEx(1,1),options.muscleFreqEx(1,2),freq(1,1),freq(1,end));
+%                 end
+                
+                % Define frequencies to include in the analysis
+                if ~isempty(options.muscleFreqIn)
+                    [~,fin1] = min(abs(options.muscleFreqIn(1) - freq));
+                    [~,fin2] = min(abs(options.muscleFreqIn(2) - freq));
+                    
+                    freqHz = freq(1,fin1:fin2);
+                    freqPow = fftBins(compNum,fin1:fin2);
+                else
+                    freqHz = freq;
+                    freqPow = fftBins(compNum,:);
+                end
+                
+                % Define frequencies to exclude from fit
+                if ~isempty(options.muscleFreqEx)
+                    [~,fex1] = min(abs(options.muscleFreqEx(1) - freqHz));
+                    [~,fex2] = min(abs(options.muscleFreqEx(2) - freqHz));
+                    freqHz(fex1:fex2) = [];
+                    freqPow(fex1:fex2) = [];
+                end
+                
+                % Fit linear regression to log-log data
+                p = polyfit(log(freqHz),log(freqPow),1);
+                
+                % Store the slope
+                muscleRatio(compNum) = p(1);
+            end
         end
 
         %Electrode noise
-        elecNoise = abs(tempCompZ) > abs(options.elecNoiseThresh);
-        if strcmpi(options.elecNoiseFeedback,'on')
-            fprintf('Comp. %d maximum electrode z score is %s.\n', compNum,num2str(max(abs(round(tempCompZ,2)))));
-        end
+        elecNoise(compNum) = max(abs(round(tempCompZ,2)));
 
         %Select if component is artifact
-        if strcmpi(options.tmsMuscle,'on') && tmsMuscleRatio >= options.tmsMuscleThresh
-            compVal = 2;
-        elseif strcmpi(options.blink,'on') && abs(blinkRatio) >= options.blinkThresh
-            compVal = 3;
-        elseif strcmpi(eyeMove,'on') && strcmpi(options.move,'on') && (moveVal(1,1) >= options.moveThresh && moveVal(2,1) <= -options.moveThresh) | (moveVal(2,1) >= options.moveThresh && moveVal(1,1) <= -options.moveThresh)
-            compVal = 3;    
-        elseif strcmpi(options.muscle,'on') && abs(muscleRatio) >= options.muscleThresh
-            compVal = 4;
-        elseif strcmpi(options.elecNoise,'on') && sum(elecNoise) >= 1
-            compVal = 5;
+        if strcmpi(options.tmsMuscle,'on') && tmsMuscleRatio(compNum) >= options.tmsMuscleThresh
+            EEG.icaCompClass.(nameIn).compClass(compNum)= 3;
+        elseif strcmpi(options.blink,'on') && abs(blinkRatio(compNum)) >= options.blinkThresh
+            EEG.icaCompClass.(nameIn).compClass(compNum) = 4;
+        elseif strcmpi(eyeMove,'on') && strcmpi(options.move,'on') && (moveVal(compNum,1) >= options.moveThresh && moveVal(compNum,2) <= -options.moveThresh) | (moveVal(compNum,2) >= options.moveThresh && moveVal(compNum,1) <= -options.moveThresh)
+            EEG.icaCompClass.(nameIn).compClass(compNum) = 5;    
+        elseif strcmpi(options.muscle,'on') && muscleRatio(compNum) >= options.muscleThresh
+            EEG.icaCompClass.(nameIn).compClass(compNum) = 6;
+        elseif strcmpi(options.elecNoise,'on') && elecNoise(compNum) >= abs(options.elecNoiseThresh);
+            EEG.icaCompClass.(nameIn).compClass(compNum) = 7;
         else
-            compVal = 1;
-        end
-
-        if strcmp(options.compCheck,'on')
-            %##########
-            %Plots the figure
-
-            %Decide colour of figure
-            if compVal ~= 1
-                colour = 'r'; % if artifact
-            else
-                colour = 'b'; % if not artefac
-            end
-
-            %Figure sizing
-            if strcmpi(options.figSize,'small')
-                sz = [560, 420]; % figure size
-                popPos = [345, 185, 140, 50];
-                popFont = 9;
-                compPos = [115, 400, 100, 20];
-                compFont = 12;
-                varPos =  [340, 397, 150, 20];
-                varFont = 9;
-            elseif strcmpi(options.figSize,'medium')
-                sz = [900, 600]; % figure size
-                popPos = [560, 260, 210, 75];
-                popFont = 14;
-                compPos = [190, 565, 150, 30];
-                compFont = 18;
-                varPos =  [550, 560, 240, 30];
-                varFont = 14;
-            elseif strcmpi(options.figSize,'large')
-                sz = [1200, 900]; % figure size
-                popPos = [750, 400, 280, 100];
-                popFont = 18;
-                compPos = [250, 855, 200, 40];
-                compFont = 24;
-                varPos =  [740, 850, 300, 40];
-                varFont = 18;
-            end
-
-            screensize = get(0,'ScreenSize');
-            xpos = ceil((screensize(3)-sz(1))/2); % center figure horizontally
-            ypos = ceil((screensize(4)-sz(2))/2); % center figure vertically
-
-            f = figure('KeyPressFcn',@(obj,evt) 0);
-            f.Position = [xpos ypos sz(1) sz(2)];
-            f.Name = 'Press enter when selection is made.';
-            f.NumberTitle = 'off';
-
-            %Plot time course
-            subplot(2,2,1);
-            plot(EEG.times,mean(temp,2),colour); grid on; hold on;
-            plot([0 0], get(gca,'ylim'),'r--');
-            set(gca,'Xlim', [options.plotTimeX(1,1), options.plotTimeX(1,2)]);
-            xlabel('Time (ms)');
-            ylabel('Amplitude (a.u.)');
-
-            %Plot topoplot
-            subplot(2,2,2);
-            topoplot(EEG.icawinv(:,compNum),EEG.chanlocs,'electrodes','off');
-            colorbar;
-
-            %Plot time course matrix
-            [val1,tp1] = min(abs(EEG.times-options.plotTimeX(1,1)));
-            [val2,tp2] = min(abs(EEG.times-options.plotTimeX(1,2)));
-            temp1 = temp(tp1:tp2,:);
-            subplot(2,2,3);
-            imagesc(temp1','XData', options.plotTimeX);
-            caxis([-max(abs(temp1(:))), max(abs(temp1(:)))]);
-            xlabel('Time (ms)');
-            ylabel('Trials');
-
-            subplot(2,2,4);
-            plot(freq,Y2,colour);grid on;
-            set(gca,'Xlim', options.plotFreqX);
-            xlabel('Frequency (Hz)');
-            ylabel('Power (\muV^{2}/Hz)');
-
-            %Plot popup window
-            popup = uicontrol('Style', 'popup',...
-                'String', {'Neural','TMS-evoked muscle','Eye','Muscle','Electrode noise','Sensory','Other'},...
-                'Position', popPos,...
-                'Value',compVal,...
-                'fontSize',popFont); 
-
-            %Plot component number
-            hT = uicontrol('style', 'text',... 
-                'string', ['IC ', num2str(compNum), ' of ', num2str(size(EEG.icaweights,1))],... 
-                'position', compPos,...
-                'BackgroundColor',f.Color,...
-                'fontWeight','bold',...
-                'fontSize',compFont);
-
-            %Variance info
-            hT2 = uicontrol('style', 'text',... 
-                'string', ['Var. accounted for: ', num2str(round(varsPerc(1,compNum),1)),' %'],... 
-                'position', varPos,...
-                'BackgroundColor',f.Color,...
-                'fontSize',varFont);
-
-            waitfor(gcf,'CurrentCharacter');
-            curChar=uint8(get(gcf,'CurrentCharacter'));
-
-            output = popup.Value;
-        else
-            output = compVal;
+            EEG.icaCompClass.(nameIn).compClass(compNum) = 1;
         end
 
         %Save components for removal
-        if output == 2
-            EEG.(nameIn).tmsMuscle(1,size(EEG.(nameIn).tmsMuscle,2)+1) = compNum;
-            EEG.(nameIn).tmsMuscleVars(1,size(EEG.(nameIn).tmsMuscleVars,2)+1) = varsPerc(1,compNum);
-        elseif output == 3
-            EEG.(nameIn).eye(1,size(EEG.(nameIn).eye,2)+1) = compNum;
-            EEG.(nameIn).eyeVars(1,size(EEG.(nameIn).eyeVars,2)+1) = varsPerc(1,compNum);
-        elseif output == 4
-            EEG.(nameIn).muscle(1,size(EEG.(nameIn).muscle,2)+1) = compNum;
-            EEG.(nameIn).muscleVars(1,size(EEG.(nameIn).muscleVars,2)+1) = varsPerc(1,compNum);
-        elseif output == 5
-            EEG.(nameIn).electrodeNoise(1,size(EEG.(nameIn).electrodeNoise,2)+1) = compNum;
-            EEG.(nameIn).electrodeNoiseVars(1,size(EEG.(nameIn).electrodeNoiseVars,2)+1) = varsPerc(1,compNum);
-        elseif output == 6
-            EEG.(nameIn).sensory(1,size(EEG.(nameIn).sensory,2)+1) = compNum;
-            EEG.(nameIn).sensoryVars(1,size(EEG.(nameIn).sensoryVars,2)+1) = varsPerc(1,compNum);
-        elseif output == 7
-            EEG.(nameIn).other(1,size(EEG.(nameIn).other,2)+1) = compNum;
-            EEG.(nameIn).otherVars(1,size(EEG.(nameIn).otherVars,2)+1) = varsPerc(1,compNum);            
+        if EEG.icaCompClass.(nameIn).compClass(compNum) == 3
+            EEG.icaCompClass.(nameIn).rejectTmsMuscle(1,size(EEG.icaCompClass.(nameIn).rejectTmsMuscle,2)+1) = compNum;
+            EEG.icaCompClass.(nameIn).rejectTmsMuscleVars(1,size(EEG.icaCompClass.(nameIn).rejectTmsMuscleVars,2)+1) = varsPerc(1,compNum);
+        elseif EEG.icaCompClass.(nameIn).compClass(compNum) == 4
+            EEG.icaCompClass.(nameIn).rejectBlink(1,size(EEG.icaCompClass.(nameIn).rejectBlink,2)+1) = compNum;
+            EEG.icaCompClass.(nameIn).rejectBlinkVars(1,size(EEG.icaCompClass.(nameIn).rejectBlinkVars,2)+1) = varsPerc(1,compNum);
+        elseif EEG.icaCompClass.(nameIn).compClass(compNum) == 5
+            EEG.icaCompClass.(nameIn).rejectEyeMove(1,size(EEG.icaCompClass.(nameIn).rejectEyeMove,2)+1) = compNum;
+            EEG.icaCompClass.(nameIn).rejectEyeMoveVars(1,size(EEG.icaCompClass.(nameIn).rejectEyeMoveVars,2)+1) = varsPerc(1,compNum);
+        elseif EEG.icaCompClass.(nameIn).compClass(compNum) == 6
+            EEG.icaCompClass.(nameIn).rejectMuscle(1,size(EEG.icaCompClass.(nameIn).rejectMuscle,2)+1) = compNum;
+            EEG.icaCompClass.(nameIn).rejectMuscleVars(1,size(EEG.icaCompClass.(nameIn).rejectMuscleVars,2)+1) = varsPerc(1,compNum);
+        elseif EEG.icaCompClass.(nameIn).compClass(compNum) == 7
+            EEG.icaCompClass.(nameIn).rejectElectrodeNoise(1,size(EEG.icaCompClass.(nameIn).rejectElectrodeNoise,2)+1) = compNum;
+            EEG.icaCompClass.(nameIn).rejectElectrodeNoiseVars(1,size(EEG.icaCompClass.(nameIn).rejectElectrodeNoiseVars,2)+1) = varsPerc(1,compNum);           
         end
 
-        close;
     end
 
-    pre = mean(EEG.data,3);
-    EEG1 = EEG;
-
-    %Remove bad components
-    removeComps = [EEG.(nameIn).tmsMuscle, EEG.(nameIn).eye, EEG.(nameIn).muscle, EEG.(nameIn).electrodeNoise, EEG.(nameIn).sensory, EEG.(nameIn).other];
-    EEG = pop_subcomp( EEG,removeComps, 0);
-
-    if strcmp(options.compCheck,'on')
-        %Plot check
-        f1 = figure('KeyPressFcn',@(obj,evt) 0);
-        f1.Name = 'Press enter when ready to continue.';
-        f1.NumberTitle = 'off';
-
-        subplot(1,2,1)
-        plot(EEG.times,pre,'b'); grid on; hold on;
-        plot([0 0], get(gca,'ylim'),'r--');
-        set(gca,'Xlim', options.plotTimeX);
-        xlabel('Time (ms)');
-        ylabel('Amplitude (\muV)');
-        title('Before correction','fontweight','bold');
-        yScale = get(gca,'ylim');
-
-        subplot(1,2,2)
-        plot(EEG.times,mean(EEG.data,3),'b'); grid on; hold on;
-        plot([0 0], yScale,'r--');
-        set(gca,'Xlim', options.plotTimeX,'ylim',yScale);
-        xlabel('Time (ms)');
-        ylabel('Amplitude (\muV)');
-        title('After correction','fontweight','bold');
-
-        waitfor(gcf,'CurrentCharacter');
-        curChar=uint8(get(gcf,'CurrentCharacter'));
-
-        %Check if happy to continue
-        ButtonName = questdlg('Are you satisfied with component removal?', 'Verify component removal', 'No-Redo', 'Yes', 'Cancel', 'Yes');
-        switch ButtonName,
-            case 'No-Redo',
-                redo = true; EEG = EEG1;
-            case 'Yes',
-                redo = false; 
-            case 'Cancel',
-                redo = false; error('Script termninated by user.');
-        end 
-
-        close;
-    else
-        redo = false;
+    % Save component variance
+    EEG.icaCompClass.(nameIn).compVars = varsPerc;
+    
+    % Save ICA weights and time course
+    if strcmp(options.saveWeights,'on')
+        EEG.icaCompClass.(nameIn).icawinv = EEG.icawinv;
+        EEG.icaCompClass.(nameIn).icaact = EEG.icaact;
     end
-              
+    
+    feedBack = [];
+    % Print feedback figures
+    if strcmpi(options.tmsMuscleFeedback,'on')
+        
+        % Component details
+        artRatio = tmsMuscleRatio;
+        artThresh = options.tmsMuscleThresh;
+        artName = 'TMS-evoked muscle';
+        
+        timeX = 1:length(artRatio);
+        artLog = artRatio >= artThresh;
+        
+        % Plot figure
+        feedBack.t1=figure;
+        h1 = stem(timeX,artRatio,'lineWidth',2); hold on;
+        
+        % Check if any components are above threshold and plot as red
+        if sum(artLog)>= 1
+            artRatio2 = artRatio(artLog);
+            timeX2 = timeX(artLog);
+            h2 = stem(timeX2,artRatio2,'lineWidth',2);
+            h2(1).Color = 'r';
+        end
+        
+        % Plot threshold line
+        plot([1,length(artRatio)],[artThresh artThresh],'r--','lineWidth',2);
+        set(gca,'box','off','tickDir','out','lineWidth',2,'fontsize',14,'xlim',[0,length(artRatio)+1])
+        title([artName,': ',num2str(sum(artLog)),' of ',num2str(length(artRatio))]);
+        xlabel('Components');
+        ylabel('Classification value');
+    end
+    if strcmpi(options.blinkFeedback,'on')
+        
+        % Component details
+        artRatio = abs(blinkRatio);
+        artThresh = options.blinkThresh;
+        artName = 'Blink';
+        
+        timeX = 1:length(artRatio);
+        artLog = artRatio >= artThresh;
+        
+        % Plot figure
+        feedBack.t2=figure;
+        h1 = stem(timeX,artRatio,'lineWidth',2); hold on;
+        
+        % Check if any components are above threshold and plot as red
+        if sum(artLog)>= 1
+            artRatio2 = artRatio(artLog);
+            timeX2 = timeX(artLog);
+            h2 = stem(timeX2,artRatio2,'lineWidth',2);
+            h2(1).Color = 'r';
+        end
+        
+        % Plot threshold line
+        plot([1,length(artRatio)],[artThresh artThresh],'r--','lineWidth',2);
+        set(gca,'box','off','tickDir','out','lineWidth',2,'fontsize',14,'xlim',[0,length(artRatio)+1])
+        title([artName,': ',num2str(sum(artLog)),' of ',num2str(length(artRatio))]);
+        xlabel('Components');
+        ylabel('Classification value');
+    end
+    if strcmpi(options.moveFeedback,'on')
+        
+        % Component details
+        artRatioA = abs(moveVal(:,1));
+        artRatioB = abs(moveVal(:,2));
+        artThresh = options.moveThresh;
+        artName = 'Eye movement';
+        
+        timeX = 1:length(artRatioA);
+        artLog = (artRatioA >= artThresh) & (artRatioB >= artThresh);
+        
+        % Plot figure
+        feedBack.t3=figure;
+        h1a = stem(timeX,artRatioA,'lineWidth',2); hold on;
+        h1b = stem(timeX,artRatioB,'lineWidth',2);
+        h1b(1).Color = h1a(1).Color;
+        
+        % Check if any components are above threshold and plot as red
+        if sum(artLog)>= 1
+            artRatio2a = artRatioA(artLog);
+            artRatio2b = artRatioB(artLog);
+            timeX2 = timeX(artLog);
+            h2a = stem(timeX2,artRatio2a,'lineWidth',2);
+            h2b = stem(timeX2,artRatio2b,'lineWidth',2);
+            h2a(1).Color = 'r';
+            h2b(1).Color = 'r';
+        end
+        
+        % Plot threshold line
+        plot([1,length(artRatioA)],[artThresh artThresh],'r--','lineWidth',2);
+        set(gca,'box','off','tickDir','out','lineWidth',2,'fontsize',14,'xlim',[0,length(artRatioA)+1])
+        title([artName,': ',num2str(sum(artLog)),' of ',num2str(length(artRatioA))]);
+        xlabel('Components');
+        ylabel('Classification value');    
+    end
+    if strcmpi(options.muscleFeedback,'on')
+        % Component details
+        artRatio = muscleRatio;
+        artThresh = options.muscleThresh;
+        artName = 'Muscle';
+        
+        timeX = 1:length(artRatio);
+        artLog = artRatio >= artThresh;
+        
+        % Plot figure
+        feedBack.t4=figure;
+        h1 = stem(timeX,artRatio,'lineWidth',2); hold on;
+        
+        % Check if any components are above threshold and plot as red
+        if sum(artLog)>= 1
+            artRatio2 = artRatio(artLog);
+            timeX2 = timeX(artLog);
+            h2 = stem(timeX2,artRatio2,'lineWidth',2);
+            h2(1).Color = 'r';
+        end
+        
+        % Plot threshold line
+        plot([1,length(artRatio)],[artThresh artThresh],'r--','lineWidth',2);
+        set(gca,'box','off','tickDir','out','lineWidth',2,'fontsize',14,'xlim',[0,length(artRatio)+1])
+        title([artName,': ',num2str(sum(artLog)),' of ',num2str(length(artRatio))]);
+        xlabel('Components');
+        ylabel('Classification value');           
+    end
+    if strcmpi(options.elecNoiseFeedback,'on')
+         % Component details
+        artRatio = abs(elecNoise);
+        artThresh = options.elecNoiseThresh;
+        artName = 'Electrode noise';
+        
+        timeX = 1:length(artRatio);
+        artLog = artRatio >= artThresh;
+        
+        % Plot figure
+        feedBack.t5=figure;
+        h1 = stem(timeX,artRatio,'lineWidth',2); hold on;
+        
+        % Check if any components are above threshold and plot as red
+        if sum(artLog)>= 1
+            artRatio2 = artRatio(artLog);
+            timeX2 = timeX(artLog);
+            h2 = stem(timeX2,artRatio2,'lineWidth',2);
+            h2(1).Color = 'r';
+        end
+        
+        % Plot threshold line
+        plot([1,length(artRatio)],[artThresh artThresh],'r--','lineWidth',2);
+        set(gca,'box','off','tickDir','out','lineWidth',2,'fontsize',14,'xlim',[0,length(artRatio)+1])
+        title([artName,': ',num2str(sum(artLog)),' of ',num2str(length(artRatio))]);
+        xlabel('Components');
+        ylabel('Classification value');    
+    end
+    
+    if strcmp(options.remove,'on')
+        % Check if component need to be plotted, if not remove bad components
+        if strcmp(options.compCheck,'on')
+            EEG = tesa_compplot(EEG,'compClassInput',EEG.icaCompClass.(nameIn),'saveWeights',options.saveWeights,'figSize',options.figSize,'plotTimeX',options.plotTimeX,'plotFreqX',options.plotFreqX,'varsPerc',varsPerc,'fftBins',fftBins,'freqBins',freq,'freqScale',options.freqScale);
+        else
+            %Remove bad components
+            allComps = 1:length(EEG.icaCompClass.(nameIn).compClass);
+            tempCompBad = EEG.icaCompClass.(nameIn).compClass > 1;
+            removeComps = allComps(tempCompBad);
+            if ~isempty(removeComps)
+                EEG = pop_subcomp( EEG,removeComps, 0);
+            end
+        end
+    end
+    
+    % Close feedback figure
+    if ~isempty(feedBack)
+        feedBackAll = fieldnames(feedBack);
+        for fx = 1:length(feedBackAll)
+            close(feedBack.(feedBackAll{fx}));
+        end
+    end
 end
