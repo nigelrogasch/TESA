@@ -79,14 +79,14 @@
 % 
 % Outputs:
 % EEG                 - EEGLAB EEG structure ( Output of SSPSIR applied on single trials )
-% EEG.EEG_meanTrials  - Output of SSPSIR applied on the average of all trials saved on a new field  
+% EEG.meanTrials  - Output of SSPSIR applied on the average of all trials saved on a new field  
 %
 % Examples:
-%  >> [EEG, EEG_meanTrials] = pop_tesa_SSPSIR( EEG ); % default use
-%  >> [EEG, EEG_meanTrials] = pop_tesa_SSPSIR( EEG, 'artScale', 'manual','timeRange',[5,50], 'PC',...  
+%  >> [EEG] = pop_tesa_SSPSIR( EEG ); % default use
+%  >> [EEG] = pop_tesa_SSPSIR( EEG, 'artScale', 'manual','timeRange',[5,50], 'PC',...  
 %     {'data', [90]} ); Suppresses muscle artefacts by removing the data components explaining more 
 %     than 90% of variance in the time winodw of 5-50ms 
-%  >> [EEG, EEG_meanTrials] = pop_tesa_SSPSIR( EEG, 'artScale', 'control','PC',  [5], 'EEG_control',...
+%  >> [EEG] = pop_tesa_SSPSIR( EEG, 'artScale', 'control','PC',  [5], 'EEG_control',...
 %     ['/Users/myPC/Desktop/controlResponse.set/']); % Suppresses control data by removing the first
 %     5 principal components of controlResponse.Data from EEG.data 
 %
