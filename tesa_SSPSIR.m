@@ -79,14 +79,14 @@
 % 
 % Outputs:
 % EEG                 - EEGLAB EEG structure ( Output of SSPSIR applied on single trials )
-% EEG.EEG_meanTrials  - Output of SSPSIR applied on the average of all trials saved on a new field  
+% EEG.meanTrials  - Output of SSPSIR applied on the average of all trials saved on a new field  
 %
 % Examples:
-%  >> [EEG, EEG_meanTrials] = tesa_SSPSIR( EEG ); % default use
-%  >> [EEG, EEG_meanTrials] = tesa_SSPSIR( EEG, 'artScale', 'manual','timeRange',[5,50], 'PC',...  
+%  >> [EEG] = tesa_SSPSIR( EEG ); % default use
+%  >> [EEG] = tesa_SSPSIR( EEG, 'artScale', 'manual','timeRange',[5,50], 'PC',...  
 %     {'data', [90]} ); Suppresses muscle artefacts by removing the data components explaining more 
 %     than 90% of variance in the time winodw of 5-50ms 
-%  >> [EEG, EEG_meanTrials] = tesa_SSPSIR( EEG, 'artScale', 'control','PC',  [5], 'EEG_control',...
+%  >> [EEG] = tesa_SSPSIR( EEG, 'artScale', 'control','PC',  [5], 'EEG_control',...
 %     ['/Users/myPC/Desktop/controlResponse.set/']); % Suppresses control data by removing the first
 %     5 principal components of controlResponse.Data from EEG.data 
 %
@@ -113,7 +113,7 @@
 % 30/09/2019
 
 
-function [EEG, EEG_meanTrials] = tesa_SSPSIR(EEG,varargin)
+function [EEG] = tesa_SSPSIR(EEG,varargin)
 % ------------------------------------ Check EEG inputs ----------------------------------------
 % Check that EEG channels have been correctly specified
 if nargin <1
@@ -322,7 +322,7 @@ else
     end
 end
 
-EEG.EEG_meanTrials = data_correct;
+EEG.meanTrials = data_correct;
 % -------------------------------------- Return single trials ----------------------------------
 
 % Clean each trial separately with the obtained artifact topograhies.
