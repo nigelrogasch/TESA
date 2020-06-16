@@ -110,6 +110,21 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+% Change log
+% NR 16-6-2020
+% - Changed the position of the 'Next' and 'Back' callback functions to
+% inside the main function to avoid use of global variables
+% - Included a 'check' variable which disables Next/Back buttons while the
+% main function is updating after a button press and avoids the need for a
+% delay in the callback functions.
+% - Included a random list of name variants in Next/Back callback functions
+% to prevent function from stalling. The waitfor function was occasionally
+% missing the change in figure name which prevented the Next/Back buttons
+% from working on subsequent presses, giving the impression that the
+% function had frozen. By randomising the names which change on each press
+% (i.e. by including different amounts of spacing in string), this issue is
+% circumvented.
+
 function EEG = tesa_compplot(EEG,varargin)
 
 if nargin < 1
@@ -641,10 +656,12 @@ while nextPlot == true
         'fontWeight','bold',...
         'fontSize',varFont);
        
+    check = [];
     drawnow;
     waitfor(f, 'Name');
     drawnow;
     f.Name = 'Press next when selection is made.';
+    check = 1;
     
     % Update categorisation of component
     compClass(nComp) = popup.Value;
@@ -902,6 +919,52 @@ clear('h_gcbf','nextPlot','exitScript');
 
 fprintf('Component removal complete\n');
 
+function nextCommand(src,event)
+% persistent check % Shared with all calls of pushbutton1_Callback.
+% delay = 0.5; % Delay in seconds.
+if isempty(check)
+    
+    % Hack to ensure waitfor does not miss change in name
+    inputName = {'Press next when selection is made. ',...
+        'Press next when selection is made.  ',...
+        'Press next when selection is made.   ',...
+        'Press next when selection is made.    ',...
+        'Press next when selection is made.     '};
+    
+    av = [1 2 3 4 5];
+    a_rand = av(randperm(length(av)));
+    
+    h_gcbf = gcbf;
+    h_gcbf.Name = inputName{a_rand(1)};
+
+else
+    return
+end
+end
+
+function back = backCommand(src,event)
+% persistent check % Shared with all calls of pushbutton1_Callback.
+% delay = 0.5; % Delay in seconds.
+if isempty(check)
+    
+    % Hack to ensure waitfor does not miss change in name
+    inputName = {'Press next when selection is made. ',...
+        'Press next when selection is made.  ',...
+        'Press next when selection is made.   ',...
+        'Press next when selection is made.    ',...
+        'Press next when selection is made.     '};
+    
+    av = [1 2 3 4 5];
+    a_rand = av(randperm(length(av)));
+
+    h_gcbf = gcbf;
+    h_gcbf.Name = inputName{a_rand(1)};
+    backPlot = 1;
+else
+    return
+end
+end
+
 end
 
 
@@ -930,35 +993,7 @@ P.p3.YLim = [str2num(auIn{1}),str2num(auIn{2})];
 
 end
 
-function nextCommand(src,event)
-persistent check % Shared with all calls of pushbutton1_Callback.
-delay = 0.5; % Delay in seconds.
-if isempty(check)
-    check = 1;
-    h_gcbf = gcbf;
-    h_gcbf.Name = 'Press next when selection is made. ';
-    pause(delay)
-    check = [];
-else
-    return
-end
-end
 
-function back = backCommand(src,event)
-persistent check % Shared with all calls of pushbutton1_Callback.
-delay = 0.5; % Delay in seconds.
-if isempty(check)
-    check = 1;
-    h_gcbf = gcbf;
-    h_gcbf.Name = 'Press next when selection is made. ';
-    global backPlot
-    backPlot = 1;
-    pause(delay)
-    check = [];
-else
-    return
-end
-end
 
 function yesCommand(src,event)
 close; 
