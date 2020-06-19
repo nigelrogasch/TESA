@@ -1,4 +1,4 @@
-% pop_tesa_SSPSIR()-  Uses SSP_SIR method to suppress TMS-evoked muscle artifacts [1] OR
+% pop_tesa_sspsir()-  Uses SSP_SIR method to suppress TMS-evoked muscle artifacts [1] OR
 %                     control data [2] from the provided EEGLAB dataset
 %
 %                     [1] Mutanen, T. P., Kukkonen, M., Nieminen, J. O., Stenroos, M., Sarvas, J.,
@@ -7,13 +7,13 @@
 %
 %                     [2] Biabani, M, Fornito, A, Mutanen, T. P., Morrow, J, & Rogasch, N. C.(2019).
 %                     Characterizing and minimizing the contribution of sensory inputs to TMS-evoked
-%                     potentials.Brain Stimulation.
+%                     potentials.Brain Stimulation, 12(6):1537-1552.
 %
 %
 %
 % Usage:
-%  >>  [EEG] = pop_tesa_SSPSIR(EEG); % pop up window; run SSP-SIR using default values
-%  >>  [EEG] = pop_tesa_SSPSIR(EEG, 'key1',value1... );% run SSP-SIR using customised
+%  >>  [EEG] = pop_tesa_sspsir(EEG); % pop up window; run SSP-SIR using default values
+%  >>  [EEG] = pop_tesa_sspsir(EEG, 'key1',value1... );% run SSP-SIR using customised
 %                              inputs
 %
 % Optional input pairs (varargin)
@@ -79,14 +79,16 @@
 % 
 % Outputs:
 % EEG                 - EEGLAB EEG structure ( Output of SSPSIR applied on single trials )
-% EEG.meanTrials  - Output of SSPSIR applied on the average of all trials saved on a new field  
+%                     NOTE: 
+%                     EEG.meanTrials  is the output of SSPSIR applied to the average of all trials
+%                     saved on a new field  
 %
 % Examples:
-%  >> [EEG] = pop_tesa_SSPSIR( EEG ); % default use
-%  >> [EEG] = pop_tesa_SSPSIR( EEG, 'artScale', 'manual','timeRange',[5,50], 'PC',...  
+%  >> [EEG] = pop_tesa_sspsir( EEG ); % default use
+%  >> [EEG] = pop_tesa_sspsir( EEG, 'artScale', 'manual','timeRange',[5,50], 'PC',...  
 %     {'data', [90]} ); Suppresses muscle artefacts by removing the data components explaining more 
 %     than 90% of variance in the time winodw of 5-50ms 
-%  >> [EEG] = pop_tesa_SSPSIR( EEG, 'artScale', 'control','PC',  [5], 'EEG_control',...
+%  >> [EEG] = pop_tesa_sspsir( EEG, 'artScale', 'control','PC',  [5], 'EEG_control',...
 %     ['/Users/myPC/Desktop/controlResponse.set/']); % Suppresses control data by removing the first
 %     5 principal components of controlResponse.Data from EEG.data 
 %
@@ -112,7 +114,7 @@
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 % 30/09/2019
 
-function [EEG, com] = pop_tesa_SSPSIR( EEG, varargin )
+function [EEG, com] = pop_tesa_sspsir( EEG, varargin )
 
 % Check that data is present
 if isempty(EEG.data)
@@ -188,7 +190,7 @@ if nargin < 2
         {'style', 'edit', 'string', '', 'tag', 'ctrlFile'}...
         {'style', 'pushbutton', 'string', '...', 'callback',[ 'tagtest = ''ctrlFile'';' fileIn ],'tag','pushCtrl', 'enable', 'off' }};
     
-    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Run SSPSIR -- pop_tesa_SSPSIR()', 'helpcom', 'pophelp(''pop_tesa_SSPSIR'')');
+    result = inputgui('geometry', geometry, 'uilist', uilist, 'title', 'Run SSPSIR -- pop_tesa_sspsir()', 'helpcom', 'pophelp(''pop_tesa_sspsir'')');
     
     options = struct('leadfieldIn',[],'leadfieldChansFile',[],'artScale',[],'timeRange',[],'PC',[],'M',[],'EEG_control',[]);
     
@@ -214,13 +216,13 @@ if nargin < 2
     if ~isempty(result{1,7}), args = {args{:}, 'M',  str2num(result{1,7})}; end;
     if ~isempty(result{1,8}), args = {args{:}, 'EEG_control', result{1,8}}; end;
     
-    % Run tesa_SSPSIR 
-    [EEG] = tesa_SSPSIR(EEG,args{:});   
-    com = sprintf('%s = pop_tesa_SSPSIR( %s, %s);', inputname(1), inputname(1), vararg2str(args) );
+    % Run tesa_sspsir 
+    [EEG] = tesa_sspsir(EEG,args{:});   
+    com = sprintf('%s = pop_tesa_sspsir( %s, %s);', inputname(1), inputname(1), vararg2str(args) );
 
 elseif nargin > 2
     
-    [EEG] = tesa_SSPSIR(EEG,varargin{:});
-    com = sprintf('%s = pop_tesa_SSPSIR( %s);', inputname(1), inputname(1), vararg2str(varargin)  );
+    [EEG] = tesa_sspsir(EEG,varargin{:});
+    com = sprintf('%s = pop_tesa_sspsir( %s);', inputname(1), inputname(1), vararg2str(varargin)  );
    
 end

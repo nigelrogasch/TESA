@@ -1,4 +1,4 @@
-% tesa_SSPSIR()-      Uses SSP_SIR method to suppress TMS-evoked muscle artifacts [1] OR
+% tesa_sspsir()-      Uses SSP-SIR method to suppress TMS-evoked muscle artifacts [1] OR
 %                     control data [2] from the provided EEGLAB dataset
 %
 %                     [1] Mutanen, T. P., Kukkonen, M., Nieminen, J. O., Stenroos, M., Sarvas, J.,
@@ -7,13 +7,13 @@
 %
 %                     [2] Biabani, M, Fornito, A, Mutanen, T. P., Morrow, J, & Rogasch, N. C.(2019).
 %                     Characterizing and minimizing the contribution of sensory inputs to TMS-evoked
-%                     potentials.Brain Stimulation. 
+%                     potentials.Brain Stimulation, 12(6):1537-1552.
 %                     
 %
 %
 % Usage:
-%  >>  [EEG] = tesa_SSPSIR(EEG); % run SSP-SIR using default values
-%  >>  [EEG] = tesa_SSPSIR(EEG, 'key1',value1... ); % run SSP-SIR using customised 
+%  >>  [EEG] = tesa_sspsir(EEG); % run SSP-SIR using default values
+%  >>  [EEG] = tesa_sspsir(EEG, 'key1',value1... ); % run SSP-SIR using customised 
 %      inputs
 %
 % Optional input pairs (varargin)
@@ -79,14 +79,16 @@
 % 
 % Outputs:
 % EEG                 - EEGLAB EEG structure ( Output of SSPSIR applied on single trials )
-% EEG.meanTrials  - Output of SSPSIR applied on the average of all trials saved on a new field  
+%                     NOTE: 
+%                     EEG.meanTrials  is the output of SSPSIR applied to the average of all trials
+%                     saved on a new field   
 %
 % Examples:
-%  >> [EEG] = tesa_SSPSIR( EEG ); % default use
-%  >> [EEG] = tesa_SSPSIR( EEG, 'artScale', 'manual','timeRange',[5,50], 'PC',...  
+%  >> [EEG] = tesa_sspsir( EEG ); % default use
+%  >> [EEG] = tesa_sspsir( EEG, 'artScale', 'manual','timeRange',[5,50], 'PC',...  
 %     {'data', [90]} ); Suppresses muscle artefacts by removing the data components explaining more 
 %     than 90% of variance in the time winodw of 5-50ms 
-%  >> [EEG] = tesa_SSPSIR( EEG, 'artScale', 'control','PC',  [5], 'EEG_control',...
+%  >> [EEG] = tesa_sspsir( EEG, 'artScale', 'control','PC',  [5], 'EEG_control',...
 %     ['/Users/myPC/Desktop/controlResponse.set/']); % Suppresses control data by removing the first
 %     5 principal components of controlResponse.Data from EEG.data 
 %
@@ -113,7 +115,7 @@
 % 30/09/2019
 
 
-function [EEG] = tesa_SSPSIR(EEG,varargin)
+function [EEG] = tesa_sspsir(EEG,varargin)
 % ------------------------------------ Check EEG inputs ----------------------------------------
 % Check that EEG channels have been correctly specified
 if nargin <1
@@ -267,7 +269,7 @@ clear wrong_type_channels;
 
 % Check that data in average reference:
 if ~strcmp(EEG.ref,'averef')
-    warning('The data is not in average reference. Note that tesa_SSPSIR returns the data in the average reference.')
+    warning('The data is not in average reference. Note that tesa_sspsir returns the data in the average reference.')
     EEG = pop_reref( EEG, []);
 end
     

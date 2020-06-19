@@ -52,7 +52,7 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     compcasuppress = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_pcasuppress(EEG);' catch_strings.new_and_hist];
     comdetrend = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_detrend(EEG);' catch_strings.new_and_hist];
     comSOUND = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_sound(EEG);' catch_strings.new_and_hist];
-    comSSPSIR = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_SSPSIR(EEG);' catch_strings.new_and_hist];
+    comSSPSIR = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_sspsir(EEG);' catch_strings.new_and_hist];
     comfiltbutter = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_filtbutter(EEG);' catch_strings.new_and_hist];
     comfiltmedian = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_filtmedian(EEG);' catch_strings.new_and_hist];
     comtepextract = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_tepextract(EEG);' catch_strings.add_to_hist];
@@ -79,8 +79,6 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     uimenu( submenu, 'Label', 'Detrend data'  , 'CallBack', comdetrend);
     uimenu( submenu, 'Label', 'SOUND algorithm'  , 'CallBack', comSOUND, 'separator', 'on');
     uimenu( submenu, 'Label', 'SSP-SIR'  , 'CallBack', comSSPSIR);
-    uimenu( submenu, 'Label', 'Butterworth filter'  , 'CallBack', comfiltbutter, 'separator', 'on');
-    uimenu( submenu, 'Label', 'Median filter'  , 'CallBack', comfiltmedian);
     uimenu( submenu, 'Label', 'Butterworth filter'  , 'CallBack', comfiltbutter, 'separator', 'on');
     uimenu( submenu, 'Label', 'Median filter'  , 'CallBack', comfiltmedian);
     uimenu( submenu, 'Label', 'Extract TEPs'  , 'CallBack', comtepextract, 'separator', 'on');
