@@ -18,8 +18,9 @@ Some example data for trialling TESA are available on figshare:
 An example script demonstrating a TMS-EEG analysis pipeline using TESA is available in the toolbox: *example_script_from_manual.m*
 
 ## Citations and acknowledgements
-If you use this software, please read and cite the following open access journal article:
-* [Rogasch NC, Sullivan C, Thomson RH, Rose NS, Bailey NW, Fitzgerald PB, Farzan F, Hernandez-Pavon JC. Analysing concurrent transcranial magnetic stimulation and electroencephalographic data: a review and introduction to the open-source TESA software. *NeuroImage*. 2017; 147:934-951.](http://www.sciencedirect.com/science/article/pii/S1053811916305845) 
+If you use this software, please read and cite the following open access journal articles:
+* [Rogasch NC, Sullivan C, Thomson RH, Rose NS, Bailey NW, Fitzgerald PB, Farzan F, Hernandez-Pavon JC. Analysing concurrent transcranial magnetic stimulation and electroencephalographic data: a review and introduction to the open-source TESA software. *NeuroImage*. 2017; 147:934-951.](http://www.sciencedirect.com/science/article/pii/S1053811916305845)
+* [Mutanen TP, Biabani M, Sarvas J, Ilmoniemi RJ, Rogasch NC. Source-based artifact-rejection techniques available in TESA, an open-source TMS-EEG toolbox. *Brain Stimulation*. 2020; In press.](https://www.sciencedirect.com/science/article/pii/S1935861X20301972?via%3Dihub)
 
 ## Comments and bugs
 Any suggestions for improving TESA or bug reports are greatly appreciated, and can be made via the [issues](https://github.com/BMHLab/TESA/issues) tab.
@@ -28,4 +29,4 @@ Any suggestions for improving TESA or bug reports are greatly appreciated, and c
 Developing methods for cleaning and analysing TMS-EEG data is an active area of research. Users are welcome to submit new functions to be included in TESA by contacting [Nigel Rogasch](<mailto:nigel.rogasch@gmail.com>).
 
 ## Code contributors
-Nigel C. Rogasch, Julio C. Hernandez-Pavon, Caley Sullivan, Nathan S. Rose 
+Nigel C. Rogasch, Julio C. Hernandez-Pavon, Caley Sullivan, Nathan S. Rose, Tuomas P. Mutanen, Mana Biabani, Jukka Sarvas
