@@ -7,7 +7,7 @@ To download TESA, visit the TESA release page: [https://github.com/nigelrogasch/
 ## TESA user manual
 A detailed description on how to use TESA is available in the TESA user manual on Gitbooks:
  
-[https://www.gitbook.com/book/nigelrogasch/tesa-user-manual/details](https://www.gitbook.com/book/nigelrogasch/tesa-user-manual/details)
+[https://nigelrogasch.gitbook.io/tesa-user-manual/](https://nigelrogasch.gitbook.io/tesa-user-manual/)
 
 The user manual is available online or can be download in pdf, epub and mobi formats. 
 
