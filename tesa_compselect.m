@@ -36,7 +36,7 @@
 %                   
 %                   and
 % 
-%                   Rogasch NC et al. (2014) Analysing concurrent transcranial magnetic stimulation and
+%                   Rogasch NC et al. (2017) Analysing concurrent transcranial magnetic stimulation and
 %                   electroencephalographic data: A review and introduction to the open-source
 %                   TESA software. NeuroImage, 147:934–951               
 %

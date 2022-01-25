@@ -28,7 +28,7 @@
 
 function vers = eegplugin_tesa(fig, try_strings, catch_strings)
 
-    vers = 'tesa1.1.1';
+    vers = 'tesa1.2.0';
     if nargin < 3
         error('eegplugin_tesa requires 3 arguments');
     end
@@ -50,6 +50,7 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     comedm = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_edm(EEG);' catch_strings.new_and_hist];
     compcacompress = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_pcacompress(EEG);' catch_strings.new_and_hist];
     compcasuppress = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_pcasuppress(EEG);' catch_strings.new_and_hist];
+    comfitartifact = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_fitartifactmodel(EEG);' catch_strings.new_and_hist];
     comdetrend = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_detrend(EEG);' catch_strings.new_and_hist];
     comSOUND = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_sound(EEG);' catch_strings.new_and_hist];
     comSSPSIR = [try_strings.no_check '[EEG LASTCOM] = pop_tesa_sspsir(EEG);' catch_strings.new_and_hist];
@@ -76,6 +77,7 @@ function vers = eegplugin_tesa(fig, try_strings, catch_strings)
     uimenu( submenu, 'Label', 'Enhanced deflation method (EDM)'  , 'CallBack', comedm);
     uimenu( submenu, 'Label', 'PCA compression'  , 'CallBack', compcacompress);
     uimenu( submenu, 'Label', 'PCA suppression'  , 'CallBack', compcasuppress);
+    uimenu( submenu, 'Label', 'Fit and subtract artifact model'  , 'CallBack', comfitartifact);
     uimenu( submenu, 'Label', 'Detrend data'  , 'CallBack', comdetrend);
     uimenu( submenu, 'Label', 'SOUND algorithm'  , 'CallBack', comSOUND, 'separator', 'on');
     uimenu( submenu, 'Label', 'SSP-SIR'  , 'CallBack', comSSPSIR);
