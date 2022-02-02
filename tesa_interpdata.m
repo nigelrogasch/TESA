@@ -42,6 +42,8 @@
 
 % Change log:
 % 15.6.2018: Changed function to work on both continuous and epoched data
+% 2.2.2022: Changed function so that it works with data not interpolated
+% around 0
 
 function EEG = tesa_interpdata( EEG, interpolation, interpWin )
 
@@ -226,9 +228,12 @@ if strcmp(interpolation,'cubic') %cubic interpolation
                 x = x1 - x1(1,1); % shift to starting at zero to avoid badly conditioned polynomial warnings at high values of x
                 
                 % Remove time points from data
-                [~,centreT] = min(abs(x1-EEGtimes(1,evLatOut(1,b))));
-                TP1 = centreT + cutN1;
-                TP2 = centreT + cutN2;
+%                 [~,centreT] = min(abs(x1-EEGtimes(1,evLatOut(1,b))));
+%                 TP1 = centreT + cutN1;
+%                 TP2 = centreT + cutN2;
+                [~,TP1] = min(abs(x1-EEG.tmscut(z).cutTimesTMS(1,1)));
+                [~,TP2] = min(abs(x1-EEG.tmscut(z).cutTimesTMS(1,2)));
+                
                 X = x(:,TP1:TP2);
                 x(:,TP1:TP2) = [];
                 
