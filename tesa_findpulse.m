@@ -160,10 +160,10 @@ data = EEG.data(num,:);
 
 %Calculate derivatives
 h = (1/EEG.srate)*1000;     %step size in ms
-der1 = diff(data)/h;        %calculates first derivative
+der1 = diff(data)/h;        %calculates first derivative in uV per ms
 
 %finds artifact (defined as first derivative > rate)
-rateS = options.rate.*h; %Convert rate in to change in uV per sample
+rateS = options.rate; %Rate in change in uV per ms
 logstim = abs(der1)>rateS;
 samp =(1:size(data,2));
 stim = samp(logstim);
