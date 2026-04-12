@@ -870,6 +870,10 @@ function EEG = tesa_compselect( EEG , varargin )
                 EEG = pop_subcomp( EEG,removeComps, 0);
             end
         end
+    elseif strcmp(options.remove,'off')
+        if strcmp(options.compCheck,'on')
+            EEG = tesa_compplot(EEG,'compClassInput',EEG.icaCompClass.(nameIn),'saveWeights',options.saveWeights,'figSize',options.figSize,'plotTimeX',options.plotTimeX,'plotFreqX',options.plotFreqX,'varsPerc',varsPerc,'fftBins',fftBins,'freqBins',freq,'freqScale',options.freqScale);
+        end
     end
     
     % Close feedback figure
