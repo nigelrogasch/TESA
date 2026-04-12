@@ -44,6 +44,8 @@
 % 15.6.2018: Changed function to work on both continuous and epoched data
 % 2.2.2022: Changed function so that it works with data not interpolated
 % around 0
+% 12.11.2025: Fixed function so interpolation works on continuous data not
+% removed around 0
 
 function EEG = tesa_interpdata( EEG, interpolation, interpWin )
 
@@ -231,8 +233,14 @@ if strcmp(interpolation,'cubic') %cubic interpolation
 %                 [~,centreT] = min(abs(x1-EEGtimes(1,evLatOut(1,b))));
 %                 TP1 = centreT + cutN1;
 %                 TP2 = centreT + cutN2;
-                [~,TP1] = min(abs(x1-EEG.tmscut(z).cutTimesTMS(1,1)));
-                [~,TP2] = min(abs(x1-EEG.tmscut(z).cutTimesTMS(1,2)));
+
+                if strcmp(dataType,'epoched')
+                    [~,TP1] = min(abs(x1-EEG.tmscut(z).cutTimesTMS(1,1)));
+                    [~,TP2] = min(abs(x1-EEG.tmscut(z).cutTimesTMS(1,2)));
+                elseif strcmp(dataType,'continuous')
+                    [~,TP1] = min(abs(x1-EEGtimes(cutWin1)));
+                    [~,TP2] = min(abs(x1-EEGtimes(cutWin2)));
+                end
                 
                 X = x(:,TP1:TP2);
                 x(:,TP1:TP2) = [];
